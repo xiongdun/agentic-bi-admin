@@ -38,3 +38,33 @@ export const menuIconTypeRecord: Record<Api.SystemManage.IconType, App.I18n.I18n
 };
 
 export const menuIconTypeOptions = transformRecordToOption(menuIconTypeRecord);
+
+export const employeeStatusRecord: Record<Api.HrManage.EmployeeStatus, App.I18n.I18nKey> = {
+  probation: 'page.hr.employee.status.probation',
+  active: 'page.hr.employee.status.active',
+  resigned: 'page.hr.employee.status.resigned'
+};
+
+export const employeeStatusOptions = transformRecordToOption(employeeStatusRecord);
+
+export const employeeStatusTagType: Record<Api.HrManage.EmployeeStatus, NaiveUI.ThemeColor> = {
+  probation: 'warning',
+  active: 'success',
+  resigned: 'default'
+};
+
+/**
+ * 员工状态机的下一个目标状态。
+ * probation → active → resigned → probation。
+ */
+export const employeeNextStatus: Partial<Record<Api.HrManage.EmployeeStatus, Api.HrManage.EmployeeStatus>> = {
+  probation: 'active',
+  active: 'resigned',
+  resigned: 'probation'
+};
+
+export const employeeTransitionLabel: Partial<Record<Api.HrManage.EmployeeStatus, App.I18n.I18nKey>> = {
+  probation: 'page.hr.employee.transition.toActive',
+  active: 'page.hr.employee.transition.toResigned',
+  resigned: 'page.hr.employee.transition.toProbation'
+};

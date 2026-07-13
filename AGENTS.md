@@ -176,5 +176,5 @@ just mm && just run && just fmt && just check
 1. CLI 生成的 `_get_scope_id()` 是业务接入钩子，生成后按模块上下文替换实现。
 2. `--data-scope Model:user_id,scope_id` 的第二字段只是默认名，可指定 `tenant_id`、`project_id`、`store_id` 等任意模型字段。
 3. `--list-cache` 与 `--rate-limit` 可按模型开启；列表缓存必须确认不会跨用户或跨 scope 复用。
-4. 新功能示例优先用 `crm` / `inventory` / `ticket` 等中性模块；main 分支不保留 HR 示例代码或文档。
+4. HR 示例文档位于 [docs/advanced/business-hr.md](docs/advanced/business-hr.md)；新功能示例优先用 `crm` / `inventory` / `ticket` 等中性模块；main 分支不保留 HR 示例代码或文档。
 5. 输出文件路径统一使用 `/`，避免在文档、日志和生成结果中混用 Windows 反斜杠。

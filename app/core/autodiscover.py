@@ -7,11 +7,18 @@ Legacy modules are still discovered by file convention:
 - init_data.py
 - config.py with a DB_URL settings object
 
+约定：
+- app/business/ 下含 __init__.py 的子目录即为业务模块
+- 以 `_` 开头的目录将被跳过
+
 New modules may additionally expose `app/business/<name>/module.py` with
 `module = BusinessModule(...)`. The manifest is preferred for runtime concerns
 such as router mounting, init ordering, data policies, and future tasks/events.
 Model and DB discovery deliberately stay file-convention based to avoid
 environment-dependent migration drift.
+
+Legacy modules may still export `api.py` / `api/__init__.py` router and
+`init_data.py` init() by file convention.
 """
 
 from __future__ import annotations
