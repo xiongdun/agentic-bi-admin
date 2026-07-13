@@ -1,6 +1,6 @@
-# FastSoyAdmin - Claude Code Guide
+# AgenticBIAdmin - Claude Code Guide
 
-FastSoyAdmin v1.0.0 | FastAPI + Vue3 全栈后台管理模板 | MIT
+AgenticBIAdmin v1.0.0 | FastAPI + Vue3 全栈后台管理模板 | MIT
 
 后端 [app/](app/)（FastAPI/Python），前端 [web/](web/)（Vue3/TypeScript，pnpm workspace），部署 [deploy/](deploy/)，迁移 [migrations/](migrations/)。
 

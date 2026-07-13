@@ -37,7 +37,7 @@ interface CommandArg {
 export async function setupCli() {
   const cliOptions = await loadCliOptions();
 
-  const cli = cac(blue('soybean-admin'));
+  const cli = cac(blue('agentic-bi-admin'));
 
   cli
     .version(lightGreen(version))

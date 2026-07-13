@@ -14,5 +14,5 @@ RUN NODE_OPTIONS=--max_old_space_size=4096 pnpm build
 # Stage 3: serve with nginx
 FROM nginx:latest
 COPY deploy/web.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /build/web/dist /var/www/html/fast-soy-admin
+COPY --from=build /build/web/dist /var/www/html/agentic-bi-admin
 EXPOSE 80

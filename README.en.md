@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
 <p align="center">
-  <a href="https://github.com/sleep1223/"><img src="web/public/favicon.svg" width="180" height="180" alt="FastSoyAdmin"></a>
+  <a href="https://github.com/xiongdun/"><img src="web/public/favicon.svg" width="180" height="180" alt="AgenticBIAdmin"></a>
 </p>
 
 <div align="center">
@@ -74,8 +74,8 @@ A batteries-included full-stack admin template — usable as an internal-tools s
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/sleep1223/fast-soy-admin.git
-cd fast-soy-admin
+git clone https://github.com/xiongdun/agentic-bi-admin.git
+cd agentic-bi-admin
 just docker-db-init  # first start dependencies and initialize the database
 just up              # start the full stack and write default/business seeds
 ```
@@ -205,12 +205,12 @@ See [response codes](https://sleep1223.github.io/fast-soy-admin-docs/en/referenc
 
 ## Contributing
 
-[Pull requests](https://github.com/sleep1223/fast-soy-admin/pulls) and [issues](https://github.com/sleep1223/fast-soy-admin/issues/new) welcome.
+[Pull requests](https://github.com/xiongdun/agentic-bi-admin/pulls) and [issues](https://github.com/xiongdun/agentic-bi-admin/issues/new) welcome.
 
-<a href="https://github.com/sleep1223/fast-soy-admin/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=sleep1223/fast-soy-admin" />
+<a href="https://github.com/xiongdun/agentic-bi-admin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=xiongdun/agentic-bi-admin" />
 </a>
 
 ## License
 
-[MIT © 2024](./LICENSE)
+[MIT © 2026](./LICENSE)

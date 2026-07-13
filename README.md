@@ -6,10 +6,10 @@
 
 <div align="center">
 
-# FastSoyAdmin
+# AgenticBIAdmin
 
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![github stars](https://img.shields.io/github/stars/sleep1223/fast-soy-admin)](https://github.com/sleep1223/fast-soy-admin)
+[![github stars](https://img.shields.io/github/stars/xiongdun/agentic-bi-admin)](https://github.com/xiongdun/agentic-bi-admin)
 ![python](https://img.shields.io/badge/python-3.12+-blue?logo=python&logoColor=edb641)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi&logoColor=edb641)
 ![Pydantic](https://img.shields.io/badge/Pydantic_v2-e92063?logo=pydantic&logoColor=edb641)
@@ -80,8 +80,8 @@
 ### Docker 部署（推荐）
 
 ```bash
-git clone https://github.com/sleep1223/fast-soy-admin.git
-cd fast-soy-admin
+git clone https://github.com/xiongdun/agentic-bi-admin.git
+cd agentic-bi-admin
 just docker-db-init  # 首次先启动依赖服务并初始化数据库
 just up              # 启动完整栈并写入默认/业务种子数据
 ```
@@ -213,12 +213,12 @@ uv sync --extra oracle  # Oracle (asyncodbc)
 
 ## 贡献
 
-欢迎提交 [Pull Request](https://github.com/sleep1223/fast-soy-admin/pulls) 或创建 [Issue](https://github.com/sleep1223/fast-soy-admin/issues/new)。
+欢迎提交 [Pull Request](https://github.com/xiongdun/agentic-bi-admin/pulls) 或创建 [Issue](https://github.com/xiongdun/agentic-bi-admin/issues/new)。
 
-<a href="https://github.com/sleep1223/fast-soy-admin/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=sleep1223/fast-soy-admin" />
+<a href="https://github.com/xiongdun/agentic-bi-admin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=xiongdun/agentic-bi-admin" />
 </a>
 
 ## 开源协议
 
-[MIT © 2024](./LICENSE)
+[MIT © 2026](./LICENSE)

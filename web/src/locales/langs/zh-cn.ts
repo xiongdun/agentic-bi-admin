@@ -1,6 +1,6 @@
 const local: App.I18n.BaseSchema = {
   system: {
-    title: 'Soybean 管理系统',
+    title: 'AgenticBI 管理系统',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',
     updateConfirm: '立即刷新',
@@ -373,7 +373,7 @@ const local: App.I18n.BaseSchema = {
     },
     about: {
       title: '关于',
-      introduction: `SoybeanAdmin 是一个优雅且功能强大的后台管理模板，基于最新的前端技术栈，包括 Vue3, Vite8, TypeScript, Pinia 和 UnoCSS。它内置了丰富的主题配置和组件，代码规范严谨，实现了自动化的文件路由系统。此外，它还采用了基于 ApiFox 的在线Mock数据方案。SoybeanAdmin 为您提供了一站式的后台管理解决方案，无需额外配置，开箱即用。同样是一个快速学习前沿技术的最佳实践。`,
+      introduction: `AgenticBIAdmin 是一个面向 AI Agent 时代的智能分析后台，基于最新的前后端技术栈，包括 FastAPI、Vue3、Vite、TypeScript、Pinia 和 UnoCSS。它内置了事件总线、行级权限、智能体编排等能力，代码规范严谨，实现了自动化的文件路由系统。AgenticBIAdmin 致力于让业务模块可由 AI 自动生成与维护，为您提供一站式的智能分析解决方案，无需额外配置，开箱即用。同样是一个快速学习 Agentic AI 与现代后台架构的最佳实践。`,
       projectInfo: {
         title: '项目信息',
         version: '版本',
@@ -405,11 +405,11 @@ const local: App.I18n.BaseSchema = {
       projectNews: {
         title: '项目动态',
         moreNews: '更多动态',
-        desc1: 'Soybean 在2021年5月28日创建了开源项目 soybean-admin!',
-        desc2: 'Yanbowe 向 soybean-admin 提交了一个bug，多标签栏不会自适应。',
-        desc3: 'Soybean 准备为 soybean-admin 的发布做充分的准备工作!',
-        desc4: 'Soybean 正在忙于为soybean-admin写项目说明文档！',
-        desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
+        desc1: 'AgenticBIAdmin 项目启动，定位为 AI Agent 驱动的智能分析后台。',
+        desc2: '团队落地了事件总线 + 周期任务 + 行级权限的异步架构骨架。',
+        desc3: 'AgenticBIAdmin 接入首个智能体编排能力，业务模块可由 AI 自动生成。',
+        desc4: '我们正在编写"自然语言到数据洞察"的下一代文档！',
+        desc5: 'AgenticBIAdmin 智能工作台初版成型，先凑合看！'
       },
       creativity: '创意'
     },

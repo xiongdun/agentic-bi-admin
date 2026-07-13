@@ -1,4 +1,4 @@
-"""FastSoyAdmin CLI — 业务模块代码生成工具。"""
+"""AgenticBIAdmin CLI — 业务模块代码生成工具。"""
 
 import click
 

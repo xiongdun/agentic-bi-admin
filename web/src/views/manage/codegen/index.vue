@@ -43,7 +43,7 @@ interface ModelConfig {
 
 type SavedModelConfigMap = Record<string, ModelConfig>;
 
-const CODEGEN_CONFIG_STORAGE_KEY = 'fast-soy-admin:codegen:model-config:v1';
+const CODEGEN_CONFIG_STORAGE_KEY = 'agentic-bi-admin:codegen:model-config:v1';
 const moduleName = ref('hr');
 const moduleCn = ref('HR管理');
 const commandKind = ref<'crud' | 'gen' | 'gen-web'>('crud');
