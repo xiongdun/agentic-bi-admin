@@ -104,7 +104,7 @@ const local: App.I18n.BaseSchema = {
         applySuccess: '预设应用成功',
         default: {
           name: '默认预设',
-          desc: 'Soybean 默认主题预设'
+          desc: 'AgenticBIAdmin 默认主题预设'
         },
         dark: {
           name: '暗色预设',
