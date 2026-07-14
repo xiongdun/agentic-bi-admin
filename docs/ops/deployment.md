@@ -3,8 +3,8 @@
 ## Docker Compose（推荐）
 
 ```bash
-git clone https://github.com/sleep1223/fast-soy-admin
-cd fast-soy-admin
+git clone https://github.com/xiongdun/agentic-bi-admin
+cd agentic-bi-admin
 just docker-db-init
 just up  # == docker compose up -d
 ```

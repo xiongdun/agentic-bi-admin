@@ -11,6 +11,7 @@ const local: App.I18n.BaseSchema = {
     add: 'Add',
     addSuccess: 'Add Success',
     backToHome: 'Back to home',
+    copy: 'Copy',
     batchApprove: 'Batch Approve',
     batchReject: 'Batch Reject',
     batchDelete: 'Batch Delete',
@@ -303,6 +304,11 @@ const local: App.I18n.BaseSchema = {
     exception_403: '403',
     exception_404: '404',
     exception_500: '500',
+    bi: 'Agentic BI',
+    bi_chat: 'Chat Workbench',
+    bi_metadata: 'Metadata Center',
+    bi_sqlworkbench: 'SQL Workbench',
+    bi_audit: 'Audit Panel',
     plugin: 'Plugin',
     plugin_copy: 'Copy',
     plugin_charts: 'Charts',
@@ -852,6 +858,172 @@ const local: App.I18n.BaseSchema = {
         confirmPasswordPlaceholder: 'Re-enter new password',
         submit: 'Submit',
         success: 'Password changed, please log in again'
+      }
+    },
+    bi: {
+      metadata: {
+        title: 'Metadata Center',
+        datasource: {
+          title: 'Datasources',
+          add: 'Add Datasource',
+          edit: 'Edit Datasource',
+          name: 'Name',
+          type: 'Type',
+          host: 'Host',
+          port: 'Port',
+          database: 'Database / File',
+          username: 'Username',
+          password: 'Password',
+          passwordPlaceholder: 'Leave blank to keep current',
+          isDefault: 'Tenant Default',
+          statusType: 'Status',
+          remark: 'Remark',
+          lastSyncedAt: 'Last Synced',
+          notSynced: 'Never synced',
+          demoConfirm:
+            'A demo e-commerce SQLite DB (10 categories, 50 products, 8 customers, 5000 orders) will be generated for the default tenant and synced automatically. Continue?',
+          demoBootstrap: 'Generate Demo',
+          test: 'Test Connection',
+          sync: 'Sync Metadata',
+          testOk: 'Connection succeeded',
+          testFailed: 'Connection failed',
+          syncSuccess: 'Sync done: {tables} tables, {columns} columns',
+          syncFailed: 'Sync failed',
+          empty: 'No datasources yet. Click "Generate Demo" to create a demo DB.',
+          form: {
+            name: 'Please enter a datasource name',
+            type: 'Please select a type',
+            database: 'Please enter database name / SQLite file name',
+            host: 'Please enter host (SQLite may leave blank)',
+            port: 'Please enter port',
+            username: 'Please enter username',
+            password: 'Please enter password',
+            isDefault: 'Please select whether this is the tenant default',
+            remark: 'Please enter remark'
+          },
+          typeLabel: {
+            postgresql: 'PostgreSQL',
+            mysql: 'MySQL',
+            clickhouse: 'ClickHouse',
+            trino: 'Trino',
+            sqlite: 'SQLite'
+          }
+        },
+        table: {
+          title: 'Tables',
+          filterDatasource: 'Filter by datasource',
+          all: 'All',
+          name: 'Table',
+          schemaName: 'Schema',
+          description: 'Description',
+          tags: 'Tags',
+          version: 'Version',
+          lastSyncedAt: 'Synced At',
+          columnCount: 'Columns',
+          empty: 'No tables synced yet. Click "Sync Metadata" on the datasource.',
+          refresh: 'Refresh Tables',
+          viewColumns: 'View Columns',
+          detailTitle: 'Table Detail: {name}'
+        },
+        column: {
+          title: 'Columns',
+          name: 'Column',
+          dataType: 'Type',
+          nullable: 'Nullable',
+          description: 'Description',
+          isDimension: 'Dimension',
+          isMetric: 'Metric',
+          sampleValues: 'Samples',
+          ordinal: 'Pos.'
+        }
+      },
+      sqlworkbench: {
+        title: 'SQL Workbench',
+        subtitle: 'Pro users run SQL directly. Read-only by default; EXPLAIN shows the query plan.',
+        datasource: 'Datasource',
+        chooseDatasource: 'Select a datasource first',
+        placeholder:
+          '-- Enter SQL (SELECT / WITH only; separate with ;, trailing ; is optional)\nSELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 10;',
+        actions: {
+          run: 'Run',
+          explain: 'EXPLAIN',
+          format: 'Format',
+          clear: 'Clear',
+          copy: 'Copy SQL',
+          copyFinal: 'Copy Final SQL'
+        },
+        allowWrite: 'Allow write (INSERT/UPDATE/DELETE, requires grant)',
+        result: {
+          empty: 'No result yet',
+          loading: 'Running…',
+          rowCount: '{count} rows in {ms} ms',
+          masked: 'Masked columns: {cols}',
+          finalSql: 'Executed SQL',
+          page: '{size} per page · page {page}'
+        },
+        explain: {
+          title: 'EXPLAIN Plan',
+          empty: 'Click EXPLAIN to inspect the current SQL',
+          cost: 'Cost: {ms} ms',
+          rawSql: 'Wrapped statement'
+        },
+        history: {
+          title: 'Execution History',
+          empty: 'No history yet',
+          refresh: 'Refresh',
+          status: 'Status',
+          statusLabel: {
+            success: 'Success',
+            failed: 'Failed',
+            timeout: 'Timeout',
+            denied: 'Denied'
+          },
+          rowCount: 'Rows',
+          cost: 'Cost',
+          time: 'Time',
+          sql: 'SQL',
+          error: 'Error',
+          deniedHint: 'Sandbox rejected'
+        },
+        messages: {
+          noDs: 'Please select a datasource first',
+          emptySql: 'Please enter SQL',
+          noPermission: 'Your role lacks permission for this action',
+          runOk: 'Run succeeded',
+          runDenied: 'Sandbox denied: {msg}',
+          runFailed: 'Run failed: {msg}'
+        }
+      },
+      chat: {
+        title: 'Chat Workbench',
+        subtitle: 'Ask in natural language; the Agent auto-generates and runs SQL.',
+        newSession: 'New Chat',
+        sessionList: 'Sessions',
+        emptySession: 'No sessions yet. Click "New Chat" to start',
+        datasource: 'Datasource',
+        chooseDatasource: 'Select a datasource',
+        placeholder: 'Ask a question, e.g. top 5 most expensive products',
+        send: 'Send',
+        stop: 'Stop',
+        thinking: 'Thinking…',
+        steps: {
+          intent: 'Intent',
+          sql_gen: 'SQL Gen',
+          validate: 'Validate',
+          executor: 'Sandbox',
+          explain: 'Explain'
+        },
+        result: {
+          title: 'Result',
+          rowCount: '{count} rows',
+          costMs: '{ms} ms',
+          tokens: 'Tokens {n}',
+          masked: 'Masked: {cols}'
+        },
+        finalSql: 'Executed SQL',
+        noData: 'No rows returned',
+        error: 'Execution error',
+        sessionTitle: 'Session #{id}'
       }
     },
     hr: {

@@ -1,8 +1,8 @@
 # 简介
 
-[FastSoyAdmin](https://github.com/sleep1223/fast-soy-admin) 是一套开箱即用的全栈后台管理模板。
+[AgenticBIAdmin](https://github.com/xiongdun/agentic-bi-admin) 是一套开箱即用的全栈后台管理模板。
 
-- **前端** — 基于 [SoybeanAdmin](https://github.com/soybeanjs/soybean-admin)，Vue3 + Vite8 + TypeScript + Pinia + UnoCSS + Naive UI
+- **前端** — 基于 [AgenticBIAdmin](https://github.com/xiongdun/agentic-bi-admin)，Vue3 + Vite8 + TypeScript + Pinia + UnoCSS + Naive UI
 - **后端** — FastAPI + Pydantic v2 + Tortoise ORM + Redis，"系统模块 + 业务模块"分层，业务模块自动发现
 
 monorepo 结构：`/app` 后端，`/web` 前端，`/deploy` Docker / Nginx。

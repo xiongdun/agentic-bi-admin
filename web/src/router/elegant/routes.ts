@@ -85,6 +85,53 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'bi',
+    path: '/bi',
+    component: 'layout.base',
+    meta: {
+      title: 'bi',
+      i18nKey: 'route.bi'
+    },
+    children: [
+      {
+        name: 'bi_audit',
+        path: '/bi/audit',
+        component: 'view.bi_audit',
+        meta: {
+          title: 'bi_audit',
+          i18nKey: 'route.bi_audit'
+        }
+      },
+      {
+        name: 'bi_chat',
+        path: '/bi/chat',
+        component: 'view.bi_chat',
+        meta: {
+          title: 'bi_chat',
+          i18nKey: 'route.bi_chat'
+        }
+      },
+      {
+        name: 'bi_metadata',
+        path: '/bi/metadata',
+        component: 'view.bi_metadata',
+        meta: {
+          title: 'bi_metadata',
+          i18nKey: 'route.bi_metadata'
+        }
+      },
+      {
+        name: 'bi_sql-workbench',
+        path: '/bi/sql-workbench',
+        component: 'view.bi_sql-workbench',
+        meta: {
+          title: 'bi_sql-workbench',
+          i18nKey: 'route.bi_sql-workbench'
+        }
+      }
+    ]
+  },
+  {
     name: 'function',
     path: '/function',
     component: 'layout.base',

@@ -1,6 +1,6 @@
 # 切换后端数据库
 
-FastSoyAdmin 的 ORM 层用 [Tortoise ORM](https://tortoise.github.io)，支持 **PostgreSQL / SQLite / MySQL(MariaDB) / SQL Server / Oracle**。**切换数据库只需改一个环境变量 `DB_URL`，不需要动代码**。
+AgenticBIAdmin 的 ORM 层用 [Tortoise ORM](https://tortoise.github.io)，支持 **PostgreSQL / SQLite / MySQL(MariaDB) / SQL Server / Oracle**。**切换数据库只需改一个环境变量 `DB_URL`，不需要动代码**。
 
 ## 快速切换（单数据库）
 

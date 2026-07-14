@@ -339,6 +339,7 @@ declare namespace App {
         add: string;
         addSuccess: string;
         backToHome: string;
+        copy: string;
         batchDelete: string;
         batchApprove: string;
         batchReject: string;
@@ -1116,6 +1117,170 @@ declare namespace App {
             total: string;
             statusBreakdown: string;
             editTags: string;
+          };
+        };
+        bi: {
+          metadata: {
+            title: string;
+            datasource: {
+              title: string;
+              add: string;
+              edit: string;
+              name: string;
+              type: string;
+              host: string;
+              port: string;
+              database: string;
+              username: string;
+              password: string;
+              passwordPlaceholder: string;
+              isDefault: string;
+              statusType: string;
+              remark: string;
+              lastSyncedAt: string;
+              notSynced: string;
+              demoConfirm: string;
+              demoBootstrap: string;
+              test: string;
+              sync: string;
+              testOk: string;
+              testFailed: string;
+              syncSuccess: string;
+              syncFailed: string;
+              empty: string;
+              form: {
+                name: string;
+                type: string;
+                database: string;
+                host: string;
+                port: string;
+                username: string;
+                password: string;
+                isDefault: string;
+                remark: string;
+              };
+              typeLabel: {
+                postgresql: string;
+                mysql: string;
+                clickhouse: string;
+                trino: string;
+                sqlite: string;
+              };
+            };
+            table: {
+              title: string;
+              filterDatasource: string;
+              all: string;
+              name: string;
+              schemaName: string;
+              description: string;
+              tags: string;
+              version: string;
+              lastSyncedAt: string;
+              columnCount: string;
+              empty: string;
+              refresh: string;
+              viewColumns: string;
+              detailTitle: string;
+            };
+            column: {
+              title: string;
+              name: string;
+              dataType: string;
+              nullable: string;
+              description: string;
+              isDimension: string;
+              isMetric: string;
+              sampleValues: string;
+              ordinal: string;
+            };
+          };
+          sqlworkbench: {
+            title: string;
+            subtitle: string;
+            datasource: string;
+            chooseDatasource: string;
+            placeholder: string;
+            actions: {
+              run: string;
+              explain: string;
+              format: string;
+              clear: string;
+              copy: string;
+              copyFinal: string;
+            };
+            allowWrite: string;
+            result: {
+              empty: string;
+              loading: string;
+              rowCount: string;
+              masked: string;
+              finalSql: string;
+              page: string;
+            };
+            explain: {
+              title: string;
+              empty: string;
+              cost: string;
+              rawSql: string;
+            };
+            history: {
+              title: string;
+              empty: string;
+              refresh: string;
+              status: string;
+              statusLabel: {
+                success: string;
+                failed: string;
+                timeout: string;
+                denied: string;
+              };
+              rowCount: string;
+              cost: string;
+              time: string;
+              sql: string;
+              error: string;
+              deniedHint: string;
+            };
+            messages: {
+              noDs: string;
+              emptySql: string;
+              noPermission: string;
+              runOk: string;
+              runDenied: string;
+              runFailed: string;
+            };
+          };
+          chat: {
+            title: string;
+            subtitle: string;
+            newSession: string;
+            sessionList: string;
+            emptySession: string;
+            datasource: string;
+            chooseDatasource: string;
+            placeholder: string;
+            send: string;
+            stop: string;
+            thinking: string;
+            steps: {
+              intent: string;
+              sql_gen: string;
+              validate: string;
+              executor: string;
+              explain: string;
+            };
+            result: {
+              title: string;
+              rowCount: string;
+              costMs: string;
+              tokens: string;
+              masked: string;
+            };
+            finalSql: string;
+            noData: string;
+            error: string;
+            sessionTitle: string;
           };
         };
       } & _MergePages<GeneratedPages>;

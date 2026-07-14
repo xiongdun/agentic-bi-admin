@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     STATIC_ROOT: Path = BASE_DIR / "static/"
     SECRET_KEY: str = "015a42020f023ac2c3eda3d45fe5ca3fef8921ce63589f6d4fcdef9814cd7fa7"
     JWT_ALGORITHM: str = "HS256"
+    # Fernet 密钥 (Phase 1) — 用于加密 Datasource 密码等敏感字段
+    # 留空时 app.utils.crypto 会写 WARNING 并使用一次性密钥
+    FERNET_KEY: str = ""
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12  # 12 hours
     JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 

@@ -59,6 +59,18 @@ def _make_guard_config():
     }
     endpoint_rate_limits.update(discover_business_endpoint_rate_limits())
 
+    # 工作台 / 沙箱的 body 内会带 SELECT / FROM 等 SQL 片段，会触发 fastapi-guard 的
+    # "SQL 注入" 模式误判。沙箱自身已经在 pipeline.py 里做白名单 + 限流，这里把
+    # /business/bi/sql/* 整段从安全策略里排除，避免误杀。
+    excluded_paths = [
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/favicon.ico",
+        "/static",
+        "/api/v1/business/bi/sql",
+    ]
+
     return SecurityConfig(
         rate_limit=APP_SETTINGS.GUARD_RATE_LIMIT,
         rate_limit_window=APP_SETTINGS.GUARD_RATE_LIMIT_WINDOW,
@@ -71,7 +83,7 @@ def _make_guard_config():
         security_headers=None,  # 安全响应头由 nginx 处理
         custom_log_file=str(APP_SETTINGS.LOGS_ROOT / "guard.log"),
         custom_response_modifier=_guard_response_modifier,
-        exclude_paths=["/docs", "/redoc", "/openapi.json", "/favicon.ico", "/static"],
+        exclude_paths=excluded_paths,
         endpoint_rate_limits=endpoint_rate_limits,
     )
 

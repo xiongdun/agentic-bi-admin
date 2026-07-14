@@ -119,3 +119,28 @@ from app.system.services import create_system_user as create_system_user
 from app.system.services import grant_user_role_code as grant_user_role_code
 from app.system.services import revoke_user_role_code as revoke_user_role_code
 from app.system.services.auth import invalidate_user_session as invalidate_user_session
+
+# ---- 加密 (Fernet) ----
+from app.utils.crypto import decrypt as decrypt
+from app.utils.crypto import encrypt as encrypt
+from app.utils.crypto import generate_key as generate_key
+from app.utils.crypto import is_persistent_key as is_persistent_key
+
+# ---- SQL 方言工具 ----
+from app.utils.sqlglot_utils import DialectName as DialectName
+from app.utils.sqlglot_utils import ast_diff as ast_diff
+from app.utils.sqlglot_utils import detect_dialect as detect_dialect
+from app.utils.sqlglot_utils import extract_column_names as extract_column_names
+from app.utils.sqlglot_utils import extract_functions as extract_functions
+from app.utils.sqlglot_utils import extract_table_names as extract_table_names
+from app.utils.sqlglot_utils import format_sql as format_sql
+from app.utils.sqlglot_utils import normalize_whitespace as normalize_whitespace
+from app.utils.sqlglot_utils import safe_parse as safe_parse
+from app.utils.sqlglot_utils import transpile_sql as transpile_sql
+
+# ---- SSE 工具 ----
+from app.utils.sse import SSE_HEADERS as SSE_HEADERS
+from app.utils.sse import format_sse_event as format_sse_event
+from app.utils.sse import sse_done_event as sse_done_event
+from app.utils.sse import sse_heartbeat_wrapper as sse_heartbeat_wrapper
+from app.utils.sse import sse_keepalive_payload as sse_keepalive_payload

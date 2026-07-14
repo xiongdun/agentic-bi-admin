@@ -4,3 +4,6 @@ export * from './route';
 export * from './system-manage';
 export * from './hr-manage';
 export * from './hr-personal';
+export * from './bi';
+export * from './bi-sql';
+export * from './bi-chat';

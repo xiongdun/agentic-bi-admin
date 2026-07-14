@@ -1,0 +1,196 @@
+"""AgenticBI 模块初始化数据 — 菜单、角色、默认租户、默认数据源。
+
+启动时由 autodiscover 自动发现并执行 ``init()``。
+所有操作幂等，重复启动不会重复创建。
+"""
+
+from __future__ import annotations
+
+from app.business.bi.models import Datasource, DatasourceType, Tenant
+from app.system.services.init_helper import _safe_update_or_create
+from app.utils import DataScopeType
+
+# 菜单结构：顶级"智能 BI" + 4 个子工作台 + 按钮权限。
+# 子菜单按钮在 Phase 1 仅做占位（路由尚未实装，按钮用于演示 reconcile）。
+BI_MENU_CHILDREN = [
+    {
+        "menu_name": "对话工作台",
+        "route_name": "bi_chat",
+        "route_path": "/bi/chat",
+        "component": "view.bi_chat",
+        "icon": "mdi:robot-love",
+        "order": 1,
+        "buttons": [
+            {"button_code": "B_BI_CHAT_NEW", "button_desc": "新建对话"},
+            {"button_code": "B_BI_CHAT_SEND", "button_desc": "发送问题"},
+            {"button_code": "B_BI_CHAT_EXPORT", "button_desc": "导出对话"},
+        ],
+    },
+    {
+        "menu_name": "元数据中心",
+        "route_name": "bi_metadata",
+        "route_path": "/bi/metadata",
+        "component": "view.bi_metadata",
+        "icon": "mdi:database-cog",
+        "order": 2,
+        "buttons": [
+            {"button_code": "B_BI_DS_CREATE", "button_desc": "新增数据源"},
+            {"button_code": "B_BI_DS_TEST", "button_desc": "测试连接"},
+            {"button_code": "B_BI_DS_SYNC", "button_desc": "同步元数据"},
+            {"button_code": "B_BI_DS_DELETE", "button_desc": "删除数据源"},
+            {"button_code": "B_BI_SYNONYM_EDIT", "button_desc": "编辑业务同义词"},
+        ],
+    },
+    {
+        "menu_name": "SQL 工作台",
+        "route_name": "bi_sqlworkbench",
+        "route_path": "/bi/sql-workbench",
+        "component": "view.bi_sqlworkbench",
+        "icon": "mdi:database-search",
+        "order": 3,
+        "buttons": [
+            {"button_code": "B_BI_SQL_RUN", "button_desc": "执行 SQL"},
+            {"button_code": "B_BI_SQL_EXPLAIN", "button_desc": "查看执行计划"},
+            {"button_code": "B_BI_SQL_HISTORY", "button_desc": "查看历史"},
+        ],
+    },
+    {
+        "menu_name": "审计面板",
+        "route_name": "bi_audit",
+        "route_path": "/bi/audit",
+        "component": "view.bi_audit",
+        "icon": "mdi:shield-search",
+        "order": 4,
+        "buttons": [
+            {"button_code": "B_BI_AUDIT_VIEW", "button_desc": "查看审计"},
+        ],
+    },
+]
+
+
+# 角色：B_BI_ADMIN（BI 管理员，看全部）+ R_BI_ANALYST（数据分析师，仅对话/工作台）
+BI_ADMIN_ROLE = {
+    "role_name": "BI 管理员",
+    "role_code": "R_BI_ADMIN",
+    "role_desc": "BI 管理员：可管理数据源、同义词、查看审计",
+    "data_scope": DataScopeType.all,
+    "menus": ["home", "bi", "bi_chat", "bi_metadata", "bi_sqlworkbench", "bi_audit"],
+    "buttons": [
+        "B_BI_CHAT_NEW",
+        "B_BI_CHAT_SEND",
+        "B_BI_CHAT_EXPORT",
+        "B_BI_DS_CREATE",
+        "B_BI_DS_TEST",
+        "B_BI_DS_SYNC",
+        "B_BI_DS_DELETE",
+        "B_BI_SYNONYM_EDIT",
+        "B_BI_SQL_RUN",
+        "B_BI_SQL_EXPLAIN",
+        "B_BI_SQL_HISTORY",
+        "B_BI_AUDIT_VIEW",
+    ],
+    "apis": [],
+}
+
+BI_ANALYST_ROLE = {
+    "role_name": "数据分析师",
+    "role_code": "R_BI_ANALYST",
+    "role_desc": "数据分析师：可使用对话工作台与 SQL 工作台，不能改元数据",
+    "data_scope": DataScopeType.all,
+    "menus": ["home", "bi", "bi_chat", "bi_sqlworkbench"],
+    "buttons": [
+        "B_BI_CHAT_NEW",
+        "B_BI_CHAT_SEND",
+        "B_BI_SQL_RUN",
+        "B_BI_SQL_EXPLAIN",
+        "B_BI_SQL_HISTORY",
+    ],
+    "apis": [],
+}
+
+BI_BUSINESS_ROLE = {
+    "role_name": "业务用户",
+    "role_code": "R_BI_BUSINESS",
+    "role_desc": "业务用户：仅能使用对话工作台用自然语言取数",
+    "data_scope": DataScopeType.all,
+    "menus": ["home", "bi", "bi_chat"],
+    "buttons": [
+        "B_BI_CHAT_NEW",
+        "B_BI_CHAT_SEND",
+    ],
+    "apis": [],
+}
+
+
+INIT_DATA = {
+    "menus": [
+        {
+            "menu_name": "智能 BI",
+            "route_name": "bi",
+            "route_path": "/bi",
+            "icon": "mdi:chart-line",
+            "order": 30,
+            "children": BI_MENU_CHILDREN,
+            # 启用 reconcile：启动时按声明重建 bi 子树，移除手工加的孤儿。
+            "reconcile": {"menus": True, "buttons": True},
+        },
+    ],
+    "roles": [BI_ADMIN_ROLE, BI_ANALYST_ROLE, BI_BUSINESS_ROLE],
+    "users": [],
+    "dictionaries": [],
+}
+
+
+# 默认租户 + 默认 SQLite 数据源（指向项目根的 demo.db）
+DEFAULT_TENANT_CODE = "default"
+DEFAULT_DATASOURCE_NAME = "默认演示数据源"
+
+# demo.db 相对项目根的路径
+DEFAULT_SQLITE_PATH = "bi_demo.db"
+
+
+async def _ensure_default_tenant() -> Tenant:
+    """确保默认租户存在（首次启动写入，重复启动幂等更新）。"""
+    tenant, _ = await _safe_update_or_create(
+        Tenant,
+        {"code": DEFAULT_TENANT_CODE},
+        {
+            "name": "默认租户",
+            "description": "AgenticBI 默认租户（演示用）",
+            "is_active": True,
+        },
+    )
+    return tenant
+
+
+async def _ensure_default_datasource(tenant_id: int) -> Datasource:
+    """确保默认数据源存在。
+
+    SQLite 类型无需 host/port/username/password；extra 留空。
+    """
+    ds, _ = await _safe_update_or_create(
+        Datasource,
+        {"name": DEFAULT_DATASOURCE_NAME},
+        {
+            "type": DatasourceType.sqlite,
+            "database": DEFAULT_SQLITE_PATH,
+            "tenant_id": tenant_id,
+            "is_default": True,
+            "remark": "默认 SQLite 演示数据源（bi_demo.db）。 demo 库为空时可由 demo_data.py 灌入电商示例数据。",
+        },
+    )
+    return ds
+
+
+async def _bind_tenant_default_datasource(tenant: Tenant, datasource: Datasource) -> None:
+    """回填 tenant.default_datasource_id。"""
+    if tenant.default_datasource_id != datasource.id:
+        tenant.default_datasource_id = datasource.id
+        await tenant.save(update_fields=["default_datasource_id"])
+
+
+async def init() -> None:
+    """bi 模块初始化入口：默认租户 + 默认数据源。"""
+    tenant = await _ensure_default_tenant()
+    datasource = await _ensure_default_datasource(tenant.id)
+    await _bind_tenant_default_datasource(tenant, datasource)

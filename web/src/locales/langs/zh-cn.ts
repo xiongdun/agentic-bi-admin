@@ -11,6 +11,7 @@ const local: App.I18n.BaseSchema = {
     add: '新增',
     addSuccess: '添加成功',
     backToHome: '返回首页',
+    copy: '复制',
     batchDelete: '批量删除',
     batchApprove: '批量通过',
     batchReject: '批量拒绝',
@@ -299,6 +300,11 @@ const local: App.I18n.BaseSchema = {
     exception_403: '403',
     exception_404: '404',
     exception_500: '500',
+    bi: '智能 BI',
+    bi_chat: '对话工作台',
+    bi_metadata: '元数据中心',
+    bi_sqlworkbench: 'SQL 工作台',
+    bi_audit: '审计面板',
     plugin: '插件示例',
     plugin_copy: '剪贴板',
     plugin_charts: '图表',
@@ -848,6 +854,172 @@ const local: App.I18n.BaseSchema = {
         confirmPasswordPlaceholder: '请再次输入新密码',
         submit: '提交',
         success: '密码修改成功，请重新登录'
+      }
+    },
+    bi: {
+      metadata: {
+        title: '元数据中心',
+        datasource: {
+          title: '数据源',
+          add: '新增数据源',
+          edit: '编辑数据源',
+          name: '数据源名称',
+          type: '类型',
+          host: '主机',
+          port: '端口',
+          database: '数据库 / 文件',
+          username: '用户名',
+          password: '密码',
+          passwordPlaceholder: '不修改请留空',
+          isDefault: '租户默认',
+          statusType: '状态',
+          remark: '备注',
+          lastSyncedAt: '最近同步',
+          notSynced: '未同步',
+          demoConfirm:
+            '将为「默认租户」生成电商演示 SQLite 库（10 类 / 50 商品 / 8 客户 / 5 千订单），并自动同步元数据。是否继续？',
+          demoBootstrap: '生成 Demo',
+          test: '测试连接',
+          sync: '同步元数据',
+          testOk: '连接成功',
+          testFailed: '连接失败',
+          syncSuccess: '同步完成：新增 {tables} 张表、{columns} 列',
+          syncFailed: '同步失败',
+          empty: '暂无数据源，点击「生成 Demo」可一键创建演示库',
+          form: {
+            name: '请输入数据源名称',
+            type: '请选择类型',
+            database: '请输入数据库名 / SQLite 文件名',
+            host: '请输入主机（SQLite 可留空）',
+            port: '请输入端口',
+            username: '请输入用户名',
+            password: '请输入密码',
+            isDefault: '请选择是否为租户默认',
+            remark: '请输入备注'
+          },
+          typeLabel: {
+            postgresql: 'PostgreSQL',
+            mysql: 'MySQL',
+            clickhouse: 'ClickHouse',
+            trino: 'Trino',
+            sqlite: 'SQLite'
+          }
+        },
+        table: {
+          title: '表清单',
+          filterDatasource: '按数据源筛选',
+          all: '全部',
+          name: '表名',
+          schemaName: 'Schema',
+          description: '业务描述',
+          tags: '标签',
+          version: '版本',
+          lastSyncedAt: '同步时间',
+          columnCount: '列数',
+          empty: '该数据源尚未同步元数据，点击数据源「同步元数据」可拉取表结构',
+          refresh: '刷新表清单',
+          viewColumns: '查看列',
+          detailTitle: '表详情：{name}'
+        },
+        column: {
+          title: '列清单',
+          name: '列名',
+          dataType: '类型',
+          nullable: '可空',
+          description: '业务描述',
+          isDimension: '维度',
+          isMetric: '度量',
+          sampleValues: '采样值',
+          ordinal: '位置'
+        }
+      },
+      sqlworkbench: {
+        title: 'SQL 工作台',
+        subtitle: '专业用户直接执行 SQL，默认只读；EXPLAIN 给出执行计划。',
+        datasource: '数据源',
+        chooseDatasource: '请先选择数据源',
+        placeholder:
+          '-- 输入 SQL（仅 SELECT / WITH；多条用 ; 分隔，尾分号可省略）\nSELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 10;',
+        actions: {
+          run: '执行',
+          explain: 'EXPLAIN',
+          format: '格式化',
+          clear: '清空',
+          copy: '复制 SQL',
+          copyFinal: '复制执行后 SQL'
+        },
+        allowWrite: '允许写操作（INSERT/UPDATE/DELETE，需要授权）',
+        result: {
+          empty: '尚无执行结果',
+          loading: '正在执行…',
+          rowCount: '返回 {count} 行，耗时 {ms} ms',
+          masked: '脱敏列：{cols}',
+          finalSql: '执行后 SQL',
+          page: '每页 {size} 条 · 第 {page} 页'
+        },
+        explain: {
+          title: 'EXPLAIN 执行计划',
+          empty: '点击「EXPLAIN」查看当前 SQL 的执行计划',
+          cost: '耗时 {ms} ms',
+          rawSql: '包装后语句'
+        },
+        history: {
+          title: '执行历史',
+          empty: '尚无历史',
+          refresh: '刷新',
+          status: '状态',
+          statusLabel: {
+            success: '成功',
+            failed: '失败',
+            timeout: '超时',
+            denied: '拒绝'
+          },
+          rowCount: '行数',
+          cost: '耗时',
+          time: '时间',
+          sql: 'SQL',
+          error: '错误',
+          deniedHint: '沙箱拒绝执行'
+        },
+        messages: {
+          noDs: '请先选择数据源',
+          emptySql: '请输入 SQL',
+          noPermission: '当前角色没有该操作权限',
+          runOk: '执行成功',
+          runDenied: '沙箱拒绝执行：{msg}',
+          runFailed: '执行失败：{msg}'
+        }
+      },
+      chat: {
+        title: '对话工作台',
+        subtitle: '用自然语言问数据，Agent 自动生成 SQL 并执行。',
+        newSession: '新建会话',
+        sessionList: '会话列表',
+        emptySession: '暂无会话，点击"新建会话"开始',
+        datasource: '数据源',
+        chooseDatasource: '请选择数据源',
+        placeholder: '问个问题吧～例如：查询价格最高的 5 个产品',
+        send: '发送',
+        stop: '停止',
+        thinking: '思考中…',
+        steps: {
+          intent: '意图识别',
+          sql_gen: '生成 SQL',
+          validate: 'SQL 校验',
+          executor: '沙箱执行',
+          explain: '结果解读'
+        },
+        result: {
+          title: '查询结果',
+          rowCount: '{count} 行',
+          costMs: '耗时 {ms} ms',
+          tokens: 'Tokens {n}',
+          masked: '脱敏列：{cols}'
+        },
+        finalSql: '执行后 SQL',
+        noData: '本次查询无返回数据',
+        error: '执行出错',
+        sessionTitle: '会话 #{id}'
       }
     },
     hr: {
