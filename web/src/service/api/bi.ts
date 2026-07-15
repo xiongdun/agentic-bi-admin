@@ -79,3 +79,83 @@ export function fetchBiTableDetail(id: string) {
     method: 'get'
   });
 }
+
+// ---- LLM Provider / Model ----
+
+/** 搜索 LLM 提供商 */
+export function fetchBiModelProviderList(data: Api.Bi.ModelProviderSearchParams) {
+  return request<Api.Bi.ModelProviderList>({
+    url: '/business/bi/llm/providers/search',
+    method: 'post',
+    data
+  });
+}
+
+/** 创建 LLM 提供商 */
+export function fetchCreateBiModelProvider(data: Api.Bi.ModelProviderAddParams) {
+  return request<{ createdId: string }>({
+    url: '/business/bi/llm/providers',
+    method: 'post',
+    data
+  });
+}
+
+/** 更新 LLM 提供商 */
+export function fetchUpdateBiModelProvider(id: string, data: Api.Bi.ModelProviderUpdateParams) {
+  return request<{ updatedId: string }>({
+    url: `/business/bi/llm/providers/${id}`,
+    method: 'patch',
+    data
+  });
+}
+
+/** 删除 LLM 提供商 */
+export function fetchDeleteBiModelProvider(id: string) {
+  return request({
+    url: `/business/bi/llm/providers/${id}`,
+    method: 'delete'
+  });
+}
+
+/** 测试 LLM 提供商连通性 */
+export function fetchTestBiModelProvider(id: string) {
+  return request<Api.Bi.ModelProviderTestResult>({
+    url: `/business/bi/llm/providers/${id}/test`,
+    method: 'post'
+  });
+}
+
+/** 搜索 LLM 模型 */
+export function fetchBiModelList(data: Api.Bi.BiModelSearchParams) {
+  return request<Api.Bi.BiModelList>({
+    url: '/business/bi/llm/models/search',
+    method: 'post',
+    data
+  });
+}
+
+/** 创建 LLM 模型 */
+export function fetchCreateBiModel(data: Api.Bi.BiModelAddParams) {
+  return request<{ createdId: string }>({
+    url: '/business/bi/llm/models',
+    method: 'post',
+    data
+  });
+}
+
+/** 更新 LLM 模型 */
+export function fetchUpdateBiModel(id: string, data: Api.Bi.BiModelUpdateParams) {
+  return request<{ updatedId: string }>({
+    url: `/business/bi/llm/models/${id}`,
+    method: 'patch',
+    data
+  });
+}
+
+/** 删除 LLM 模型 */
+export function fetchDeleteBiModel(id: string) {
+  return request({
+    url: `/business/bi/llm/models/${id}`,
+    method: 'delete'
+  });
+}

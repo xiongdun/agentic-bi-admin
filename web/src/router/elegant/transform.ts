@@ -189,6 +189,7 @@ const routeMap: RouteMap = {
   "bi_audit": "/bi/audit",
   "bi_chat": "/bi/chat",
   "bi_metadata": "/bi/metadata",
+  "bi_models": "/bi/models",
   "bi_sql-workbench": "/bi/sql-workbench",
   "function": "/function",
   "function_hide-child": "/function/hide-child",

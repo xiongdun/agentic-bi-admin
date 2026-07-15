@@ -1282,6 +1282,100 @@ declare namespace App {
             error: string;
             sessionTitle: string;
           };
+          models: {
+            title: string;
+            subtitle: string;
+            provider: {
+              title: string;
+              add: string;
+              edit: string;
+              name: string;
+              code: string;
+              type: string;
+              displayName: string;
+              baseUrl: string;
+              apiKey: string;
+              apiKeyMasked: string;
+              apiKeyPlaceholder: string;
+              isEnabled: string;
+              isDefault: string;
+              order: string;
+              statusType: string;
+              remark: string;
+              lastTestedAt: string;
+              lastTestOk: string;
+              lastTestOkLabel: {
+                true: string;
+                false: string;
+                null: string;
+              };
+              modelCount: string;
+              test: string;
+              testOk: string;
+              testFailed: string;
+              empty: string;
+              form: {
+                name: string;
+                code: string;
+                type: string;
+                displayName: string;
+                baseUrl: string;
+                apiKey: string;
+                order: string;
+                remark: string;
+              };
+              typeLabel: {
+                openai_compatible: string;
+                anthropic: string;
+                ollama: string;
+                mock: string;
+                custom: string;
+              };
+            };
+            model: {
+              title: string;
+              add: string;
+              edit: string;
+              provider: string;
+              code: string;
+              displayName: string;
+              type: string;
+              contextWindow: string;
+              inputPrice: string;
+              outputPrice: string;
+              defaultParams: string;
+              capabilities: string;
+              isEnabled: string;
+              isDefault: string;
+              order: string;
+              statusType: string;
+              remark: string;
+              empty: string;
+              form: {
+                provider: string;
+                code: string;
+                displayName: string;
+                type: string;
+                contextWindow: string;
+                inputPrice: string;
+                outputPrice: string;
+                order: string;
+                remark: string;
+              };
+              typeLabel: {
+                chat: string;
+                embedding: string;
+                vision: string;
+              };
+              capabilityLabel: {
+                function_call: string;
+                reasoning: string;
+                json_mode: string;
+                vision: string;
+                streaming: string;
+              };
+            };
+          };
         };
       } & _MergePages<GeneratedPages>;
       form: {

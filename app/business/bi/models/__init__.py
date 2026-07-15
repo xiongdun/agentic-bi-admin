@@ -11,6 +11,13 @@ from app.business.bi.models.conversation import (
     MessageRole,
     QueryExecution,
 )
+from app.business.bi.models.llm import (
+    DEFAULT_BASE_URLS,
+    BiModel,
+    BiModelProvider,
+    ModelProviderType,
+    ModelType,
+)
 from app.business.bi.models.metadata import (
     BiColumn,
     BiTable,
@@ -29,6 +36,7 @@ from app.business.bi.models.security import (
     DatasourceGrant,
     MaskType,
 )
+from app.business.bi.models.audit import BiAuditSql
 from app.business.bi.models.semantic import (
     Chart,
     ChartAgg,
@@ -68,4 +76,12 @@ __all__ = [
     "MaskType",
     "ColumnMasking",
     "AuditLog",
+    # audit
+    "BiAuditSql",
+    # llm
+    "ModelProviderType",
+    "DEFAULT_BASE_URLS",
+    "BiModelProvider",
+    "ModelType",
+    "BiModel",
 ]

@@ -121,6 +121,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'bi_models',
+        path: '/bi/models',
+        component: 'view.bi_models',
+        meta: {
+          title: 'bi_models',
+          i18nKey: 'route.bi_models'
+        }
+      },
+      {
         name: 'bi_sql-workbench',
         path: '/bi/sql-workbench',
         component: 'view.bi_sql-workbench',

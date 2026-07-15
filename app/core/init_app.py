@@ -62,6 +62,8 @@ def _make_guard_config():
     # 工作台 / 沙箱的 body 内会带 SELECT / FROM 等 SQL 片段，会触发 fastapi-guard 的
     # "SQL 注入" 模式误判。沙箱自身已经在 pipeline.py 里做白名单 + 限流，这里把
     # /business/bi/sql/* 整段从安全策略里排除，避免误杀。
+    # 模型管理 provider 的 baseUrl / extra 是 URL / JSON 字符串，会触发 fastapi-guard 的
+    # "URL/可疑字符串" 模式误判；同样的策略里也整段排除 LLM 路径。
     excluded_paths = [
         "/docs",
         "/redoc",
@@ -69,6 +71,7 @@ def _make_guard_config():
         "/favicon.ico",
         "/static",
         "/api/v1/business/bi/sql",
+        "/api/v1/business/bi/llm",
     ]
 
     return SecurityConfig(

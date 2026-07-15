@@ -149,20 +149,20 @@ async def _write_audit_log(
 ) -> None:
     """落审计日志（失败不抛 — 不能让审计写入把业务请求拖垮）。"""
     try:
-        from app.business.bi.models import AuditLog  # 局部 import 避免循环
+        from app.business.bi.services.audit import record_audit
 
-        await AuditLog.create(
+        await record_audit(
+            action="query",
             user_id=ctx.user_id,
             tenant_id=ctx.tenant_id,
-            action="query",
-            datasource_id=ctx.datasource.id,
             datasource=ctx.datasource,
+            sql_text=sql,
             sql_hash=sql_hash,
             row_count=row_count,
             cost_ms=cost_ms,
             ip=ctx.ip,
             user_agent=ctx.user_agent,
-            detail={"status": status, "error": error, "sql_preview": sql[:2000]},
+            detail={"status": status, "error": error},
         )
     except Exception:  # noqa: BLE001
         from app.core.log import log

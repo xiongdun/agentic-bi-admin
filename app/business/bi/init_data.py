@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 from app.business.bi.models import Datasource, DatasourceType, Tenant
-from app.system.services.init_helper import _safe_update_or_create
+from app.core.log import log
+from app.system.services.init_helper import _safe_update_or_create, apply_init_data
 from app.utils import DataScopeType
 
 # 菜单结构：顶级"智能 BI" + 4 个子工作台 + 按钮权限。
@@ -43,9 +44,9 @@ BI_MENU_CHILDREN = [
     },
     {
         "menu_name": "SQL 工作台",
-        "route_name": "bi_sqlworkbench",
+        "route_name": "bi_sql-workbench",
         "route_path": "/bi/sql-workbench",
-        "component": "view.bi_sqlworkbench",
+        "component": "view.bi_sql-workbench",
         "icon": "mdi:database-search",
         "order": 3,
         "buttons": [
@@ -55,12 +56,29 @@ BI_MENU_CHILDREN = [
         ],
     },
     {
+        "menu_name": "模型管理",
+        "route_name": "bi_models",
+        "route_path": "/bi/models",
+        "component": "view.bi_models",
+        "icon": "mdi:robot-outline",
+        "order": 4,
+        "buttons": [
+            {"button_code": "B_BI_MODEL_PROVIDER_CREATE", "button_desc": "新增提供商"},
+            {"button_code": "B_BI_MODEL_PROVIDER_UPDATE", "button_desc": "编辑提供商"},
+            {"button_code": "B_BI_MODEL_PROVIDER_DELETE", "button_desc": "删除提供商"},
+            {"button_code": "B_BI_MODEL_PROVIDER_TEST", "button_desc": "测试连通"},
+            {"button_code": "B_BI_MODEL_CREATE", "button_desc": "新增模型"},
+            {"button_code": "B_BI_MODEL_UPDATE", "button_desc": "编辑模型"},
+            {"button_code": "B_BI_MODEL_DELETE", "button_desc": "删除模型"},
+        ],
+    },
+    {
         "menu_name": "审计面板",
         "route_name": "bi_audit",
         "route_path": "/bi/audit",
         "component": "view.bi_audit",
         "icon": "mdi:shield-search",
-        "order": 4,
+        "order": 5,
         "buttons": [
             {"button_code": "B_BI_AUDIT_VIEW", "button_desc": "查看审计"},
         ],
@@ -72,9 +90,9 @@ BI_MENU_CHILDREN = [
 BI_ADMIN_ROLE = {
     "role_name": "BI 管理员",
     "role_code": "R_BI_ADMIN",
-    "role_desc": "BI 管理员：可管理数据源、同义词、查看审计",
+    "role_desc": "BI 管理员：可管理数据源、同义词、模型、查看审计",
     "data_scope": DataScopeType.all,
-    "menus": ["home", "bi", "bi_chat", "bi_metadata", "bi_sqlworkbench", "bi_audit"],
+    "menus": ["home", "bi", "bi_chat", "bi_metadata", "bi_sql-workbench", "bi_models", "bi_audit"],
     "buttons": [
         "B_BI_CHAT_NEW",
         "B_BI_CHAT_SEND",
@@ -87,6 +105,13 @@ BI_ADMIN_ROLE = {
         "B_BI_SQL_RUN",
         "B_BI_SQL_EXPLAIN",
         "B_BI_SQL_HISTORY",
+        "B_BI_MODEL_PROVIDER_CREATE",
+        "B_BI_MODEL_PROVIDER_UPDATE",
+        "B_BI_MODEL_PROVIDER_DELETE",
+        "B_BI_MODEL_PROVIDER_TEST",
+        "B_BI_MODEL_CREATE",
+        "B_BI_MODEL_UPDATE",
+        "B_BI_MODEL_DELETE",
         "B_BI_AUDIT_VIEW",
     ],
     "apis": [],
@@ -97,7 +122,7 @@ BI_ANALYST_ROLE = {
     "role_code": "R_BI_ANALYST",
     "role_desc": "数据分析师：可使用对话工作台与 SQL 工作台，不能改元数据",
     "data_scope": DataScopeType.all,
-    "menus": ["home", "bi", "bi_chat", "bi_sqlworkbench"],
+    "menus": ["home", "bi", "bi_chat", "bi_sql-workbench"],
     "buttons": [
         "B_BI_CHAT_NEW",
         "B_BI_CHAT_SEND",
@@ -190,7 +215,27 @@ async def _bind_tenant_default_datasource(tenant: Tenant, datasource: Datasource
 
 
 async def init() -> None:
-    """bi 模块初始化入口：默认租户 + 默认数据源。"""
+    """bi 模块初始化入口：菜单/角色 + 默认租户 + 默认数据源 + LLM router 刷新。"""
+    # 一次性迁移：旧版 route_name 用了 bi_sqlworkbench（无连字符），
+    # 与前端 elegant-router 生成的 bi_sql-workbench 不一致，导致 i18n 回退显示原始 key。
+    # 在 apply_init_data 之前把旧 route_name 改正，避免 route_path 唯一约束冲突。
+    from app.system.models import Menu
+
+    _legacy = await Menu.filter(route_name="bi_sqlworkbench").first()
+    if _legacy:
+        _legacy.route_name = "bi_sql-workbench"
+        await _legacy.save(update_fields=["route_name"])
+        log.warning("Migrated legacy menu route_name 'bi_sqlworkbench' -> 'bi_sql-workbench'")
+    # 先 apply 菜单与角色（幂等，含 reconcile 子树清理）
+    await apply_init_data(INIT_DATA)
     tenant = await _ensure_default_tenant()
     datasource = await _ensure_default_datasource(tenant.id)
     await _bind_tenant_default_datasource(tenant, datasource)
+    # 启动时从 DB 重建 LLM router（DB 优先，env 兜底）
+    try:
+        from app.business.bi.llm import refresh_router
+
+        await refresh_router()
+    except Exception:  # noqa: BLE001
+        # router 刷新失败不应阻塞模块启动
+        pass

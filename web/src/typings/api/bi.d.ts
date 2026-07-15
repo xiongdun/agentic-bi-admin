@@ -194,5 +194,102 @@ declare namespace Api {
       question: string;
       datasourceId?: string | null;
     }
+
+    // ---- Model Provider / Model (LLM) ----
+
+    type ModelProviderType = 'openai_compatible' | 'anthropic' | 'ollama' | 'mock' | 'custom';
+    type ModelType = 'chat' | 'embedding' | 'vision';
+    type ModelCapability = 'function_call' | 'reasoning' | 'json_mode' | 'vision' | 'streaming';
+
+    interface ModelProvider {
+      id: string;
+      name: string;
+      code: string;
+      type: ModelProviderType;
+      displayName: string | null;
+      baseUrl: string | null;
+      apiKeyMasked: string | null;
+      extra: Record<string, unknown> | null;
+      isEnabled: boolean;
+      isDefault: boolean;
+      order: number;
+      lastTestedAt: string | null;
+      lastTestOk: boolean | null;
+      statusType: Common.EnableStatus;
+      remark: string | null;
+      modelCount: number;
+    }
+
+    type ModelProviderSearchParams = CommonType.RecordNullable<
+      { name?: string; code?: string; type?: ModelProviderType; isEnabled?: boolean } & CommonSearchParams
+    >;
+
+    type ModelProviderList = Common.PaginatingQueryRecord<ModelProvider>;
+
+    interface ModelProviderAddParams {
+      name: string;
+      code: string;
+      type: ModelProviderType;
+      displayName?: string | null;
+      baseUrl?: string | null;
+      apiKey?: string | null;
+      extra?: Record<string, unknown> | null;
+      isEnabled?: boolean;
+      isDefault?: boolean;
+      order?: number;
+      remark?: string | null;
+    }
+
+    type ModelProviderUpdateParams = Partial<ModelProviderAddParams>;
+
+    interface ModelProviderTestResult {
+      ok: boolean;
+      error: string | null;
+      model: string | null;
+    }
+
+    interface BiModel {
+      id: string;
+      providerId: string;
+      providerCode: string | null;
+      providerName: string | null;
+      code: string;
+      displayName: string | null;
+      type: ModelType;
+      contextWindow: number;
+      inputPrice: number | null;
+      outputPrice: number | null;
+      defaultParams: Record<string, unknown> | null;
+      capabilities: ModelCapability[] | null;
+      isEnabled: boolean;
+      isDefault: boolean;
+      order: number;
+      statusType: Common.EnableStatus;
+      remark: string | null;
+    }
+
+    type BiModelSearchParams = CommonType.RecordNullable<
+      { providerId?: string; code?: string; type?: ModelType; isEnabled?: boolean } & CommonSearchParams
+    >;
+
+    type BiModelList = Common.PaginatingQueryRecord<BiModel>;
+
+    interface BiModelAddParams {
+      providerId: string;
+      code: string;
+      displayName?: string | null;
+      type?: ModelType;
+      contextWindow?: number;
+      inputPrice?: number | null;
+      outputPrice?: number | null;
+      defaultParams?: Record<string, unknown> | null;
+      capabilities?: ModelCapability[] | null;
+      isEnabled?: boolean;
+      isDefault?: boolean;
+      order?: number;
+      remark?: string | null;
+    }
+
+    type BiModelUpdateParams = Partial<BiModelAddParams>;
   }
 }

@@ -307,7 +307,8 @@ const local: App.I18n.BaseSchema = {
     bi: 'Agentic BI',
     bi_chat: 'Chat Workbench',
     bi_metadata: 'Metadata Center',
-    bi_sqlworkbench: 'SQL Workbench',
+    'bi_sql-workbench': 'SQL Workbench',
+    bi_models: 'Model Management',
     bi_audit: 'Audit Panel',
     plugin: 'Plugin',
     plugin_copy: 'Copy',
@@ -1024,6 +1025,100 @@ const local: App.I18n.BaseSchema = {
         noData: 'No rows returned',
         error: 'Execution error',
         sessionTitle: 'Session #{id}'
+      },
+      models: {
+        title: 'Model Management',
+        subtitle: 'Configure multiple LLM providers and models. DB-first, env fallback.',
+        provider: {
+          title: 'Providers',
+          add: 'Add Provider',
+          edit: 'Edit Provider',
+          name: 'Name',
+          code: 'Code',
+          type: 'Type',
+          displayName: 'Display Name',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyMasked: 'API Key (masked)',
+          apiKeyPlaceholder: 'Leave blank to keep current',
+          isEnabled: 'Enabled',
+          isDefault: 'Default',
+          order: 'Order',
+          statusType: 'Status',
+          remark: 'Remark',
+          lastTestedAt: 'Last Tested',
+          lastTestOk: 'Test Result',
+          lastTestOkLabel: {
+            true: 'OK',
+            false: 'Failed',
+            null: 'Untested'
+          },
+          modelCount: 'Models',
+          test: 'Test',
+          testOk: 'Connection succeeded',
+          testFailed: 'Connection failed: {msg}',
+          empty: 'No providers yet. Click "Add Provider" to onboard your first LLM.',
+          form: {
+            name: 'Please enter a provider name',
+            code: 'Please enter a code (e.g. deepseek)',
+            type: 'Please select a protocol',
+            displayName: 'Please enter a display name',
+            baseUrl: 'Please enter a Base URL (optional, will be prefilled by type)',
+            apiKey: 'Please enter the API Key',
+            order: 'Please enter the order',
+            remark: 'Please enter the remark'
+          },
+          typeLabel: {
+            openai_compatible: 'OpenAI Compatible',
+            anthropic: 'Anthropic',
+            ollama: 'Ollama',
+            mock: 'Mock',
+            custom: 'Custom'
+          }
+        },
+        model: {
+          title: 'Models',
+          add: 'Add Model',
+          edit: 'Edit Model',
+          provider: 'Provider',
+          code: 'Model Code',
+          displayName: 'Display Name',
+          type: 'Type',
+          contextWindow: 'Context Window',
+          inputPrice: 'Input Price',
+          outputPrice: 'Output Price',
+          defaultParams: 'Default Params (JSON)',
+          capabilities: 'Capabilities',
+          isEnabled: 'Enabled',
+          isDefault: 'Default',
+          order: 'Order',
+          statusType: 'Status',
+          remark: 'Remark',
+          empty: 'No models yet. Click "Add Model" to create one.',
+          form: {
+            provider: 'Please select a provider',
+            code: 'Please enter a model code',
+            displayName: 'Please enter a display name',
+            type: 'Please select a model type',
+            contextWindow: 'Please enter the context window size',
+            inputPrice: 'Please enter the input price',
+            outputPrice: 'Please enter the output price',
+            order: 'Please enter the order',
+            remark: 'Please enter the remark'
+          },
+          typeLabel: {
+            chat: 'Chat',
+            embedding: 'Embedding',
+            vision: 'Vision'
+          },
+          capabilityLabel: {
+            function_call: 'Function Call',
+            reasoning: 'Reasoning',
+            json_mode: 'JSON Mode',
+            vision: 'Vision',
+            streaming: 'Streaming'
+          }
+        }
       }
     },
     hr: {

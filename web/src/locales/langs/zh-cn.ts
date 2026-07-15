@@ -303,7 +303,8 @@ const local: App.I18n.BaseSchema = {
     bi: '智能 BI',
     bi_chat: '对话工作台',
     bi_metadata: '元数据中心',
-    bi_sqlworkbench: 'SQL 工作台',
+    bi_models: '模型管理',
+    'bi_sql-workbench': 'SQL 工作台',
     bi_audit: '审计面板',
     plugin: '插件示例',
     plugin_copy: '剪贴板',
@@ -1020,6 +1021,100 @@ const local: App.I18n.BaseSchema = {
         noData: '本次查询无返回数据',
         error: '执行出错',
         sessionTitle: '会话 #{id}'
+      },
+      models: {
+        title: '模型管理',
+        subtitle: '配置多家 LLM 提供商与模型；DB 优先，环境变量兜底。',
+        provider: {
+          title: '提供商',
+          add: '新增提供商',
+          edit: '编辑提供商',
+          name: '名称',
+          code: '编码',
+          type: '协议',
+          displayName: '展示名',
+          baseUrl: 'Base URL',
+          apiKey: 'API Key',
+          apiKeyMasked: 'API Key（脱敏）',
+          apiKeyPlaceholder: '不修改请留空',
+          isEnabled: '启用',
+          isDefault: '默认',
+          order: '排序',
+          statusType: '状态',
+          remark: '备注',
+          lastTestedAt: '最近测试',
+          lastTestOk: '测试结果',
+          lastTestOkLabel: {
+            true: '成功',
+            false: '失败',
+            null: '未测试'
+          },
+          modelCount: '模型数',
+          test: '测试连通',
+          testOk: '连通成功',
+          testFailed: '连通失败：{msg}',
+          empty: '暂无提供商，点击「新增提供商」可接入第一个 LLM',
+          form: {
+            name: '请输入提供商名称',
+            code: '请输入编码（英文，如 deepseek）',
+            type: '请选择协议',
+            displayName: '请输入展示名',
+            baseUrl: '请输入 Base URL（可空，将按 type 预填）',
+            apiKey: '请输入 API Key',
+            order: '请输入排序',
+            remark: '请输入备注'
+          },
+          typeLabel: {
+            openai_compatible: 'OpenAI 兼容',
+            anthropic: 'Anthropic',
+            ollama: 'Ollama',
+            mock: 'Mock',
+            custom: '自定义'
+          }
+        },
+        model: {
+          title: '模型',
+          add: '新增模型',
+          edit: '编辑模型',
+          provider: '所属提供商',
+          code: '模型编码',
+          displayName: '展示名',
+          type: '用途',
+          contextWindow: '上下文窗口',
+          inputPrice: '输入价格',
+          outputPrice: '输出价格',
+          defaultParams: '默认参数（JSON）',
+          capabilities: '能力位',
+          isEnabled: '启用',
+          isDefault: '默认',
+          order: '排序',
+          statusType: '状态',
+          remark: '备注',
+          empty: '暂无模型，点击「新增模型」可添加',
+          form: {
+            provider: '请选择提供商',
+            code: '请输入模型编码',
+            displayName: '请输入展示名',
+            type: '请选择用途',
+            contextWindow: '请输入上下文窗口大小',
+            inputPrice: '请输入输入价格',
+            outputPrice: '请输入输出价格',
+            order: '请输入排序',
+            remark: '请输入备注'
+          },
+          typeLabel: {
+            chat: '对话',
+            embedding: 'Embedding',
+            vision: '视觉'
+          },
+          capabilityLabel: {
+            function_call: '工具调用',
+            reasoning: '推理',
+            json_mode: 'JSON 模式',
+            vision: '视觉',
+            streaming: '流式'
+          }
+        }
       }
     },
     hr: {
