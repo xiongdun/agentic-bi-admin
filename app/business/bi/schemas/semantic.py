@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.core.base_schema import SchemaBase, make_optional
+from app.core.base_schema import PageQueryBase, SchemaBase, make_optional
 
 # ---- Metric ----
 
@@ -14,25 +14,46 @@ class MetricCreate(SchemaBase):
     display_name: str
     description: str | None = None
     sql_template: str
+    # sqid 字符串,API 层用 ``decode_id`` 还原成 int
+    datasource_id: str
     dataset_id: int | None = None
     unit: str | None = None
 
 
-MetricUpdate = make_optional(MetricCreate, "MetricUpdate")
+class MetricUpdate(SchemaBase):
+    """更新度量(name / datasource_id 不可改)。"""
+
+    display_name: str | None = None
+    description: str | None = None
+    sql_template: str | None = None
+    unit: str | None = None
+    status_type: str | None = None
 
 
 class MetricOut(SchemaBase):
     """度量响应。"""
 
-    id: int
+    id: str  # sqid
     name: str
     display_name: str
     description: str | None = None
     sql_template: str
-    dataset_id: int | None = None
+    # sqid 字符串,空字符串表示未关联
+    datasource_id: str = ""
     unit: str | None = None
     owner_id: int
     status_type: str
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class MetricPageQuery(PageQueryBase):
+    """指标分页查询。"""
+
+    name: str | None = None
+    # sqid 字符串,API 层 decode 成 int
+    datasource_id: str | None = None
+    status_type: str | None = None
 
 
 # ---- Dataset ----
@@ -102,6 +123,7 @@ __all__ = [
     "MetricCreate",
     "MetricUpdate",
     "MetricOut",
+    "MetricPageQuery",
     "DatasetCreate",
     "DatasetUpdate",
     "DatasetOut",
