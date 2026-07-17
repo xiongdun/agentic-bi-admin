@@ -29,6 +29,10 @@ class AgentState(TypedDict, total=False):
     target_tables: list[str]
     target_metrics: list[str]
 
+    # 意图路由选中的 metric（Phase 1.x）
+    metric_ids: list[int]  # LLM 选中的 metric id 列表（可空）
+    metric_templates: list[str]  # 对应 metric 的 sql_template 列表
+
     # LLM 输出
     draft_sql: str
     final_sql: str
