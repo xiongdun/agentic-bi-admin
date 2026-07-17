@@ -13,7 +13,7 @@ from enum import Enum
 
 from tortoise import fields
 
-from app.business.bi.models.metadata import BiTable
+from app.business.bi.models.metadata import BiTable, Datasource
 from app.core.base_model import AuditMixin, BaseModel, StatusType
 
 
@@ -28,6 +28,13 @@ class Metric(BaseModel, AuditMixin):
     display_name = fields.CharField(max_length=200, description="展示名")
     description = fields.CharField(max_length=500, null=True, blank=True, description="业务描述")
     sql_template = fields.CharField(max_length=2000, description="SQL 模板，如 SUM({order}.amount) WHERE {order}.status='paid'")
+    datasource_id: int
+    datasource: fields.ForeignKeyRelation["Datasource"] = fields.ForeignKeyField(
+        "app_system.Datasource",
+        on_delete=fields.CASCADE,
+        related_name="metrics",
+        description="所属数据源",
+    )
     dataset_id: int | None
     dataset: fields.ForeignKeyNullableRelation["Dataset"] = fields.ForeignKeyField(
         "app_system.Dataset",
