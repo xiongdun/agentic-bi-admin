@@ -64,7 +64,7 @@ async def create_datasource(
         if tenant is None:
             tenant = await Tenant.create(code="default", name="默认租户", is_active=True)
     password_enc = encrypt(password) if password else None
-    return await Datasource.create(
+    ds = await Datasource.create(
         name=name,
         type=DatasourceType(type),
         host=host,
@@ -78,6 +78,20 @@ async def create_datasource(
         created_by=user_id,
         updated_by=user_id,
     )
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="datasource_create",
+            user_id=user_id,
+            tenant_id=tenant.id,
+            datasource=ds,
+            detail={"name": name, "type": type, "database": database, "host": host, "port": port},
+        )
+    except Exception:  # noqa: BLE001
+        pass
+    return ds
 
 
 async def update_datasource(ds_id: int, **fields) -> Datasource:
@@ -95,6 +109,19 @@ async def update_datasource(ds_id: int, **fields) -> Datasource:
     for k, v in fields.items():
         setattr(ds, k, v)
     await ds.save()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        # 不在 detail 里记录密码
+        safe_fields = {k: v for k, v in fields.items() if "password" not in k.lower()}
+        await record_audit(
+            action="datasource_update",
+            datasource=ds,
+            detail={"updated_fields": list(safe_fields.keys())},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return ds
 
 
@@ -103,7 +130,20 @@ async def delete_datasource(ds_id: int) -> None:
     ds = await Datasource.filter(id=ds_id).first()
     if ds is None:
         return
+    ds_name = ds.name
+    ds_id_val = ds.id
     await ds.delete()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="datasource_delete",
+            datasource_id=ds_id_val,
+            detail={"name": ds_name},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 async def get_datasource(ds_id: int) -> Datasource | None:

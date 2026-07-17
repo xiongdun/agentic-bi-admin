@@ -198,6 +198,17 @@ async def create_provider(
             updated_by=user_id,
         )
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="provider_create",
+            user_id=user_id,
+            detail={"provider_id": p.id, "name": name, "code": code, "type": type},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return p
 
 
@@ -223,6 +234,17 @@ async def update_provider(provider_id: int, **fields: Any) -> BiModelProvider:
             setattr(p, k, v)
         await p.save()
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        safe_fields = {k: v for k, v in fields.items() if k != "api_key"}
+        await record_audit(
+            action="provider_update",
+            detail={"provider_id": p.id, "code": p.code, "updated_fields": list(safe_fields.keys())},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return p
 
 
@@ -230,8 +252,20 @@ async def delete_provider(provider_id: int) -> None:
     p = await get_provider(provider_id)
     if p is None:
         return
+    p_code = p.code
+    p_id = p.id
     await p.delete()  # on_delete=CASCADE 自动清掉关联 model
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="provider_delete",
+            detail={"provider_id": p_id, "code": p_code},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------- model ----------
@@ -324,6 +358,17 @@ async def create_model(
             updated_by=user_id,
         )
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="model_create",
+            user_id=user_id,
+            detail={"model_id": m.id, "provider_id": provider_id, "code": code, "type": type},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return m
 
 
@@ -347,6 +392,16 @@ async def update_model(model_id: int, **fields: Any) -> BiModel:
             setattr(m, k, v)
         await m.save()
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="model_update",
+            detail={"model_id": m.id, "provider_id": m.provider_id, "updated_fields": list(fields.keys())},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return m
 
 
@@ -354,8 +409,21 @@ async def delete_model(model_id: int) -> None:
     m = await get_model(model_id)
     if m is None:
         return
+    m_id = m.id
+    m_pid = m.provider_id
+    m_code = m.code
     await m.delete()
     await _refresh_llm_router()
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="model_delete",
+            detail={"model_id": m_id, "provider_id": m_pid, "code": m_code},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 async def get_default_model() -> BiModel | None:
@@ -387,19 +455,87 @@ async def test_provider_connection(provider_id: int) -> tuple[bool, str | None, 
     if not p.api_key and p.type != ModelProviderType.ollama:
         await _update_test_status(p, ok=False)
         return False, "api_key 为空", model_code
-    url = p.base_url.rstrip("/") + "/v1/models"  # OpenAI 兼容: /v1/models, 多数厂商都支持
-    headers = {"Authorization": f"Bearer {p.api_key}"} if p.api_key else {}
+    # 探测策略：发一个最小 chat 请求（max_tokens=1）
+    # - 比 GET /v1/models 更可靠：覆盖「完整 chat URL」「base + path」两种 baseUrl 形态
+    # - 同时验证鉴权 + 协议可达 + 模型存在
+    # - 代价：1 token（可忽略）
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(url, headers=headers)
+        url, headers, body = _build_probe_request(p, model_code)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, headers=headers, json=body)
         if resp.status_code < 400:
             await _update_test_status(p, ok=True)
             return True, None, model_code
         await _update_test_status(p, ok=False)
+        # 401/403 → 明确提示鉴权失败；404 → 提示 URL 路径或模型问题
         return False, f"HTTP {resp.status_code}: {resp.text[:200]}", model_code
     except Exception as exc:  # noqa: BLE001
         await _update_test_status(p, ok=False)
         return False, f"{type(exc).__name__}: {exc}", model_code
+
+
+def _build_probe_request(
+    p: BiModelProvider,
+    model_code: str | None,
+) -> tuple[str, dict[str, str], dict]:
+    """根据 provider 协议构造最小探测请求。
+
+    智能识别 baseUrl 形态：
+    - 已含 chat 端点后缀（/chat/completions、/messages、/completions）
+      → 直接用原 URL，不重复拼 path
+    - 末尾是 /v1 或 /v2（用户已定位到 API 版本）
+      → 只拼 /chat/completions 或 /messages，避免出现 ``/v1/v1/chat/completions`` 这种 404 路径
+    - 否则按协议拼 path：anthropic→/v1/messages；其他→/v1/chat/completions
+    """
+    base = (p.base_url or "").rstrip("/")
+    lower = base.lower()
+    # 已是完整 chat 端点 URL → 直接用
+    is_full_chat = any(
+        lower.endswith(suf)
+        for suf in (
+            "/v1/chat/completions",
+            "/chat/completions",
+            "/v1/messages",
+            "/messages",
+            "/completions",
+        )
+    )
+    if is_full_chat:
+        url = base
+    elif lower.endswith("/v1") or lower.endswith("/v2"):
+        # 用户已定位到 API 版本，只拼 chat/messages 端点
+        url = base + ("/messages" if p.type == ModelProviderType.anthropic else "/chat/completions")
+    elif p.type == ModelProviderType.anthropic:
+        url = base + "/v1/messages"
+    else:
+        url = base + "/v1/chat/completions"
+
+    # 模型回退：没有 default model 时用占位（仅用于探测连通性 + 鉴权）
+    model = model_code or "default"
+
+    if p.type == ModelProviderType.anthropic:
+        headers = {
+            "x-api-key": p.api_key or "",
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        body = {
+            "model": model,
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "ping"}],
+        }
+    else:
+        # OpenAI 兼容（openai_compatible / ollama / custom / mock）
+        headers = {
+            "Authorization": f"Bearer {p.api_key}" if p.api_key else "",
+            "Content-Type": "application/json",
+        }
+        body = {
+            "model": model,
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "ping"}],
+        }
+    return url, headers, body
 
 
 async def _update_test_status(p: BiModelProvider, *, ok: bool) -> None:

@@ -18,6 +18,7 @@ from app.utils import BusinessModule, BusinessRouter, PermissionSpec
 router = APIRouter()
 
 # —— 数据源管理 ——
+from app.business.bi.api.audit import router as audit_router  # noqa: E402
 from app.business.bi.api.chat import router as chat_router  # noqa: E402
 from app.business.bi.api.datasource import router as datasource_router  # noqa: E402
 from app.business.bi.api.llm import router as llm_router  # noqa: E402
@@ -29,6 +30,7 @@ router.include_router(metadata_router, prefix="")
 router.include_router(sql_router, prefix="")
 router.include_router(chat_router, prefix="")
 router.include_router(llm_router, prefix="")
+router.include_router(audit_router, prefix="")
 
 # Phase 2 之后接入的 router（占位声明，确保 imports 缺包时立即失败）:
 # from app.business.bi.api.chat import router as chat_router

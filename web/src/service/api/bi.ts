@@ -159,3 +159,59 @@ export function fetchDeleteBiModel(id: string) {
     method: 'delete'
   });
 }
+
+// ---- Audit ----
+
+/** 分页查询审计日志 */
+export function fetchBiAuditList(data: Api.Bi.AuditSearchParams) {
+  return request<Api.Common.PaginatingQueryRecord<Api.Bi.AuditLog>>({
+    url: '/business/bi/audit/logs',
+    method: 'get',
+    params: data
+  });
+}
+
+/** 审计详情（含原始 SQL） */
+export function fetchBiAuditDetail(id: string) {
+  return request<Api.Bi.AuditDetail | null>({
+    url: `/business/bi/audit/logs/${id}`,
+    method: 'get'
+  });
+}
+
+/** 审计 KPI 统计 */
+export function fetchBiAuditStats(params?: { startTime?: string; endTime?: string }) {
+  return request<Api.Bi.AuditStats>({
+    url: '/business/bi/audit/stats',
+    method: 'get',
+    params
+  });
+}
+
+/** 按天趋势 */
+export function fetchBiAuditTrend(params?: { days?: number; action?: string }) {
+  return request<Api.Bi.DailyTrendItem[]>({
+    url: '/business/bi/audit/trend',
+    method: 'get',
+    params
+  });
+}
+
+/** 时段热力图 */
+export function fetchBiAuditHeatmap(params?: { days?: number }) {
+  return request<Api.Bi.HeatmapPoint[]>({
+    url: '/business/bi/audit/heatmap',
+    method: 'get',
+    params
+  });
+}
+
+/** 导出审计 CSV */
+export function exportBiAuditCsv(params?: Api.Bi.AuditSearchParams) {
+  return request<Blob, 'blob'>({
+    url: '/business/bi/audit/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  });
+}

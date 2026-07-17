@@ -1376,6 +1376,61 @@ declare namespace App {
               };
             };
           };
+          audit: {
+            title: string;
+            subtitle: string;
+            kpi: {
+              total: string;
+              success: string;
+              failed: string;
+              activeUsers: string;
+              avgCost: string;
+            };
+            filter: {
+              timeRange: string;
+              userId: string;
+              keyword: string;
+              action: string;
+              status: string;
+              query: string;
+              reset: string;
+              export: string;
+            };
+            tab: {
+              list: string;
+              trend: string;
+              heatmap: string;
+            };
+            table: {
+              time: string;
+              user: string;
+              action: string;
+              status: string;
+              datasource: string;
+              sqlHash: string;
+              rowCount: string;
+              costMs: string;
+              ip: string;
+              op: string;
+              view: string;
+              empty: string;
+            };
+            detail: {
+              title: string;
+              basic: string;
+              execution: string;
+              sql: string;
+              copy: string;
+              detail: string;
+            };
+            empty: {
+              trend: string;
+              heatmap: string;
+            };
+            copyOk: string;
+            exportOk: string;
+            exportFail: string;
+          };
         };
       } & _MergePages<GeneratedPages>;
       form: {

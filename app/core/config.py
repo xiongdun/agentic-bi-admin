@@ -78,6 +78,12 @@ class Settings(BaseSettings):
     GUARD_AUTO_BAN_THRESHOLD: int = 10
     GUARD_AUTO_BAN_DURATION: int = 21600
 
+    # ===========================
+    # BI 业务
+    # ===========================
+    # BI 审计日志保留天数；启动时跑一次清理
+    BI_AUDIT_RETENTION_DAYS: int = 90
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

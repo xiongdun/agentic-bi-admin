@@ -12,7 +12,7 @@ import json
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sse_starlette.sse import EventSourceResponse
 
 from app.business.bi.models import (
@@ -133,7 +133,8 @@ async def create_session(obj_in: ChatSessionCreate):
 
 
 @router.get("/sessions", name="bi.chat.list", summary="会话列表")
-async def list_sessions(obj_in: PageQueryBase):
+async def list_sessions(obj_in: PageQueryBase = Depends()):
+    """GET 列表：``PageQueryBase`` 通过 ``Depends()`` 从 query string 解析，避免 Pydantic 把它当 body 校验导致 ``必填字段缺失``。"""
     user_id = _user_id_or_fail()
     qs = ChatSession.filter(user_id=user_id, status_type="enable").order_by("-last_message_at", "-id")
     total = await qs.count()

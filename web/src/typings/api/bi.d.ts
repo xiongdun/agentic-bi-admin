@@ -291,5 +291,77 @@ declare namespace Api {
     }
 
     type BiModelUpdateParams = Partial<BiModelAddParams>;
+
+    // ===================== Audit =====================
+
+    /** 审计日志记录。 */
+    interface AuditLog {
+      id: string;
+      userId: number;
+      tenantId: number;
+      action: string;
+      datasourceId: string | null;
+      datasourceName: string | null;
+      sqlHash: string | null;
+      rowCount: number | null;
+      costMs: number | null;
+      ip: string | null;
+      userAgent: string | null;
+      detail: Record<string, any> | null;
+      status: string | null;
+      createdAt: string;
+    }
+
+    interface AuditSearchParams {
+      current: number;
+      size: number;
+      userId?: number;
+      datasourceId?: number;
+      action?: string;
+      status?: string;
+      startTime?: string;
+      endTime?: string;
+      keyword?: string;
+    }
+
+    interface AuditStats {
+      total: number;
+      success: number;
+      failed: number;
+      totalExportRows: number;
+      activeUsers: number;
+      avgCostMs: number;
+    }
+
+    interface DailyTrendItem {
+      date: string;
+      count: number;
+      success: number;
+      failed: number;
+    }
+
+    interface HeatmapPoint {
+      dayOfWeek: number;
+      hour: number;
+      count: number;
+    }
+
+    interface AuditDetail {
+      id: string;
+      userId: number;
+      tenantId: number;
+      action: string;
+      datasourceId: string | null;
+      datasourceName: string | null;
+      sqlHash: string | null;
+      rowCount: number | null;
+      costMs: number | null;
+      ip: string | null;
+      userAgent: string | null;
+      detail: Record<string, any> | null;
+      status: string | null;
+      createdAt: string;
+      sqlText: string | null;
+    }
   }
 }

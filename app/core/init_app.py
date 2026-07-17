@@ -72,6 +72,7 @@ def _make_guard_config():
         "/static",
         "/api/v1/business/bi/sql",
         "/api/v1/business/bi/llm",
+        "/api/v1/business/bi/audit",
     ]
 
     return SecurityConfig(

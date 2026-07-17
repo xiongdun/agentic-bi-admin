@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.core.base_schema import PageQueryBase, SchemaBase
+from app.core.base_schema import SchemaBase
 
 # ---- Chat ----
 
@@ -80,33 +80,6 @@ class SqlExplainRequest(SchemaBase):
     sql: str
 
 
-# ---- Audit ----
-
-
-class AuditLogOut(SchemaBase):
-    """审计日志响应。"""
-
-    id: int
-    user_id: int
-    tenant_id: int
-    action: str
-    datasource_id: int | None = None
-    sql_hash: str | None = None
-    row_count: int | None = None
-    cost_ms: int | None = None
-    ip: str | None = None
-    detail: dict | None = None
-    created_at: str | None = None
-
-
-class AuditSearch(PageQueryBase):
-    """审计搜索。"""
-
-    user_id: int | None = None
-    datasource_id: int | None = None
-    action: str | None = None
-
-
 # ---- Grant / Masking ----
 
 
@@ -136,8 +109,6 @@ __all__ = [
     "SqlExecuteRequest",
     "SqlExecuteResponse",
     "SqlExplainRequest",
-    "AuditLogOut",
-    "AuditSearch",
     "DatasourceGrantIn",
     "ColumnMaskingIn",
 ]

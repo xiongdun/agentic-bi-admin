@@ -4,6 +4,7 @@
 据此把本模块注册到 Tortoise）。本文件聚合四个子模块中的所有模型类。
 """
 
+from app.business.bi.models.audit import BiAuditSql
 from app.business.bi.models.conversation import (
     ChatMessage,
     ChatSession,
@@ -36,7 +37,6 @@ from app.business.bi.models.security import (
     DatasourceGrant,
     MaskType,
 )
-from app.business.bi.models.audit import BiAuditSql
 from app.business.bi.models.semantic import (
     Chart,
     ChartAgg,

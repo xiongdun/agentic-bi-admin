@@ -13,7 +13,6 @@ from __future__ import annotations
 import csv
 import io
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 from tortoise.queryset import QuerySet
 
@@ -117,7 +116,6 @@ def _apply_filters(
     status: str | None = None,
     start_time: datetime | None = None,
     end_time: datetime | None = None,
-    keyword: str | None = None,
 ) -> QuerySet[AuditLog]:
     if user_id is not None:
         qs = qs.filter(user_id=user_id)
@@ -132,8 +130,6 @@ def _apply_filters(
         qs = qs.filter(created_at__gte=start_time)
     if end_time:
         qs = qs.filter(created_at__lte=end_time)
-    if keyword:
-        qs = qs.filter(sql_hash__icontains=keyword) | qs.filter(ip__icontains=keyword)
     return qs
 
 
@@ -158,17 +154,26 @@ async def search_audit_logs(
         status=status,
         start_time=start_time,
         end_time=end_time,
-        keyword=keyword,
     )
+    if keyword:
+        # sql_hash / ip OR 模糊匹配：基于已过滤 qs 取两个子查询 ID 集合
+        hash_ids = qs.filter(sql_hash__icontains=keyword).values_list("id", flat=True)
+        ip_ids = qs.filter(ip__icontains=keyword).values_list("id", flat=True)
+        merged = set(await hash_ids) | set(await ip_ids)
+        qs = AuditLog.filter(id__in=list(merged) if merged else [])
     total = await qs.count()
     items: list[AuditLog] = await qs.order_by("-created_at").offset((current - 1) * size).limit(size)
     # 批量取 datasource name（避免 N+1）
-    ds_ids = {a.datasource_id for a in items if a.datasource_id}
+    ds_ids = {a.datasource_id for a in items if a.datasource_id is not None}
     ds_names: dict[int, str] = {}
     if ds_ids:
         for ds in await Datasource.filter(id__in=list(ds_ids)):
+            assert ds.id is not None  # noqa: S101 - 主键非空
             ds_names[ds.id] = ds.name
-    out = [_audit_to_dict(a, datasource_name=ds_names.get(a.datasource_id)) for a in items]
+    out: list[dict] = []
+    for a in items:
+        ds_name = ds_names.get(a.datasource_id) if a.datasource_id is not None else None
+        out.append(_audit_to_dict(a, datasource_name=ds_name))
     return out, total
 
 
@@ -210,7 +215,9 @@ async def get_audit_stats(
     export_items = await export_qs.exclude(row_count=None).values("row_count")
     total_export_rows = sum(r["row_count"] for r in export_items if r["row_count"])
     active_users = await qs.distinct().values_list("user_id", flat=True)
-    avg_cost = await qs.filter(cost_ms__isnull=False).avg("cost_ms")
+    cost_items = await qs.filter(cost_ms__isnull=False).values_list("cost_ms", flat=True)
+    cost_list: list[int] = [int(c[0]) if isinstance(c, tuple) else int(c) for c in cost_items if c is not None]
+    avg_cost = sum(cost_list) / len(cost_list) if cost_list else 0
     return {
         "total": total,
         "success": success,
@@ -235,11 +242,7 @@ async def get_daily_trend(
     qs = AuditLog.filter(created_at__gte=start, created_at__lte=end)
     if action:
         qs = qs.filter(action=action)
-    # SQLite 的 strftime 兼容
-    raw = await qs.annotate(
-        day_str=RawSQL_strftime("created_at"),
-    ).group_by("day_str").values("day_str")
-    # 上面 RawSQL 在不同方言下不好统一，改为 Python 端聚合
+    # SQLite / PostgreSQL / MySQL 通用：Python 端聚合（量级 30 天 × N ops 不大）
     items = await qs.order_by("created_at").values("created_at", "action", "detail")
     buckets: dict[str, dict[str, int]] = {}
     for it in items:
@@ -265,13 +268,6 @@ async def get_daily_trend(
         out.append({"date": key, "count": b["count"], "success": b["success"], "failed": b["failed"]})
         cur += timedelta(days=1)
     return out
-
-
-def RawSQL_strftime(field: str) -> Any:  # noqa: N802
-    """占位——实际聚合改为 Python 端处理，避免方言差异。"""
-    from tortoise.expressions import RawSQL
-
-    return RawSQL(f"strftime('%Y-%m-%d', \"{field}\")")
 
 
 async def get_hourly_heatmap(
@@ -319,9 +315,21 @@ async def export_audit_csv(
         start_time=start_time,
         end_time=end_time,
     )
-    items = await qs.order_by("-created_at").limit(10000).values(
-        "created_at", "user_id", "action", "datasource_id", "sql_hash",
-        "row_count", "cost_ms", "ip", "detail",
+    items = (
+        await qs
+        .order_by("-created_at")
+        .limit(10000)
+        .values(
+            "created_at",
+            "user_id",
+            "action",
+            "datasource_id",
+            "sql_hash",
+            "row_count",
+            "cost_ms",
+            "ip",
+            "detail",
+        )
     )
     # 批量取 datasource name
     ds_ids = {i["datasource_id"] for i in items if i.get("datasource_id")}
@@ -333,24 +341,31 @@ async def export_audit_csv(
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow([
-        "时间", "用户ID", "操作类型", "数据源", "SQL哈希",
-        "行数", "耗时(ms)", "状态", "IP",
+        "时间",
+        "用户ID",
+        "操作类型",
+        "数据源",
+        "SQL哈希",
+        "行数",
+        "耗时(ms)",
+        "状态",
+        "IP",
     ])
     for it in items:
-        detail = it.get("detail") or {}
+        detail = it["detail"] or {}
         status = detail.get("status") if isinstance(detail, dict) else ""
-        ds_name = ds_names.get(it.get("datasource_id"), "")
-        created = it.get("created_at")
+        ds_name = ds_names.get(it["datasource_id"], "")
+        created = it["created_at"]
         writer.writerow([
             created.isoformat() if created else "",
-            it.get("user_id", ""),
-            it.get("action", ""),
+            it["user_id"],
+            it["action"],
             ds_name,
-            it.get("sql_hash", "") or "",
-            it.get("row_count", "") or "",
-            it.get("cost_ms", "") or "",
+            it["sql_hash"] or "",
+            it["row_count"] or "",
+            it["cost_ms"] or "",
             status or "",
-            it.get("ip", "") or "",
+            it["ip"] or "",
         ])
     return buf.getvalue()
 

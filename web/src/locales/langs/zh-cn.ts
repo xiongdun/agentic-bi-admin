@@ -1115,6 +1115,61 @@ const local: App.I18n.BaseSchema = {
             streaming: '流式'
           }
         }
+      },
+      audit: {
+        title: '审计面板',
+        subtitle: '查询/导出/CRUD 全量审计：操作追溯、SQL 回放、趋势分析、时段热力图。',
+        kpi: {
+          total: '总操作数',
+          success: '成功',
+          failed: '失败',
+          activeUsers: '活跃用户',
+          avgCost: '平均耗时'
+        },
+        filter: {
+          timeRange: '时间范围',
+          userId: '用户ID',
+          keyword: 'SQL哈希 / IP',
+          action: '操作类型',
+          status: '状态',
+          query: '查询',
+          reset: '重置',
+          export: '导出 CSV'
+        },
+        tab: {
+          list: '审计列表',
+          trend: '按天趋势',
+          heatmap: '时段热力图'
+        },
+        table: {
+          time: '时间',
+          user: '用户',
+          action: 'Action',
+          status: '状态',
+          datasource: '数据源',
+          sqlHash: 'SQL 摘要',
+          rowCount: '行数',
+          costMs: '耗时',
+          ip: 'IP',
+          op: '操作',
+          view: '查看',
+          empty: '暂无审计记录'
+        },
+        detail: {
+          title: '审计详情',
+          basic: '基本信息',
+          execution: '执行明细',
+          sql: '原始 SQL',
+          copy: '复制',
+          detail: 'Detail'
+        },
+        empty: {
+          trend: '暂无趋势数据',
+          heatmap: '暂无热力图数据'
+        },
+        copyOk: '已复制',
+        exportOk: '已导出 CSV',
+        exportFail: '导出失败'
       }
     },
     hr: {

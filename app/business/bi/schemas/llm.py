@@ -9,7 +9,12 @@ from app.core.types import SqidPath
 
 
 class ModelProviderCreate(SchemaBase):
-    """创建提供商请求。"""
+    """创建提供商请求。
+
+    注：baseUrl 不做 chat-path 后缀校验——很多 LLM 厂商（特别是国产 OpenAI 兼容实现）
+    直接给完整 chat 端点 URL（如 ``https://token.sensenova.cn/v1/chat/completions``），
+    是合法形态。探测逻辑在 service 层做归一化处理。
+    """
 
     name: str
     code: str

@@ -1,8 +1,18 @@
 """AgenticBI Pydantic schemas — 包入口。"""
 
-from app.business.bi.schemas.chat import (
+from app.business.bi.schemas.audit import (
+    AuditDetailOut,
+    AuditExportQuery,
     AuditLogOut,
     AuditSearch,
+    AuditStatsOut,
+    AuditStatsQuery,
+    DailyTrendItem,
+    HeatmapPoint,
+    HeatmapQuery,
+    TrendQuery,
+)
+from app.business.bi.schemas.chat import (
     ChatMessageOut,
     ChatSendRequest,
     ChatSessionCreate,
@@ -83,12 +93,21 @@ __all__ = [
     "ChartCreate",
     "ChartUpdate",
     "ChartOut",
-    # sql workbench + audit + grant
+    # sql workbench + grant
     "SqlExecuteRequest",
     "SqlExecuteResponse",
     "SqlExplainRequest",
-    "AuditLogOut",
-    "AuditSearch",
     "DatasourceGrantIn",
     "ColumnMaskingIn",
+    # audit
+    "AuditLogOut",
+    "AuditSearch",
+    "AuditDetailOut",
+    "AuditStatsOut",
+    "AuditStatsQuery",
+    "DailyTrendItem",
+    "HeatmapPoint",
+    "HeatmapQuery",
+    "TrendQuery",
+    "AuditExportQuery",
 ]

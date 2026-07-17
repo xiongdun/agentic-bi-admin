@@ -1,3 +1,4 @@
+# pyright: reportIncompatibleVariableOverride=false
 """AgenticBI 数据模型 — 审计 SQL 文本存储。
 
 1 张表：

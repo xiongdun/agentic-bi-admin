@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from app.business.bi.models import Datasource, DatasourceType, Tenant
+from app.core.config import APP_SETTINGS
 from app.core.log import log
 from app.system.services.init_helper import _safe_update_or_create, apply_init_data
 from app.utils import DataScopeType
@@ -81,6 +82,7 @@ BI_MENU_CHILDREN = [
         "order": 5,
         "buttons": [
             {"button_code": "B_BI_AUDIT_VIEW", "button_desc": "查看审计"},
+            {"button_code": "B_BI_AUDIT_EXPORT", "button_desc": "导出审计"},
         ],
     },
 ]
@@ -113,6 +115,20 @@ BI_ADMIN_ROLE = {
         "B_BI_MODEL_UPDATE",
         "B_BI_MODEL_DELETE",
         "B_BI_AUDIT_VIEW",
+        "B_BI_AUDIT_EXPORT",
+    ],
+    "apis": [],
+}
+
+BI_AUDITOR_ROLE = {
+    "role_name": "BI 审计员",
+    "role_code": "R_BI_AUDITOR",
+    "role_desc": "BI 审计员：只读访问审计面板，可导出审计",
+    "data_scope": DataScopeType.all,
+    "menus": ["home", "bi", "bi_audit"],
+    "buttons": [
+        "B_BI_AUDIT_VIEW",
+        "B_BI_AUDIT_EXPORT",
     ],
     "apis": [],
 }
@@ -160,7 +176,7 @@ INIT_DATA = {
             "reconcile": {"menus": True, "buttons": True},
         },
     ],
-    "roles": [BI_ADMIN_ROLE, BI_ANALYST_ROLE, BI_BUSINESS_ROLE],
+    "roles": [BI_ADMIN_ROLE, BI_AUDITOR_ROLE, BI_ANALYST_ROLE, BI_BUSINESS_ROLE],
     "users": [],
     "dictionaries": [],
 }
@@ -238,4 +254,12 @@ async def init() -> None:
         await refresh_router()
     except Exception:  # noqa: BLE001
         # router 刷新失败不应阻塞模块启动
+        pass
+    # 启动时跑一次审计清理（避免历史数据无限增长）
+    try:
+        from app.business.bi.services.audit import cleanup_old_audit_logs
+
+        retention = int(getattr(APP_SETTINGS, "BI_AUDIT_RETENTION_DAYS", 90))
+        await cleanup_old_audit_logs(retention_days=retention)
+    except Exception:  # noqa: BLE001
         pass

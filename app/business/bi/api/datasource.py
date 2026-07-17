@@ -15,7 +15,7 @@ from app.business.bi.services.metadata_api import ensure_demo_data
 from app.core.base_schema import Fail, Success, SuccessExtra
 from app.core.ctx import get_current_user_id
 from app.core.dependency import require_buttons
-from app.core.sqids import encode_id
+from app.core.sqids import decode_id, encode_id
 from app.core.types import SqidPath
 
 router = APIRouter(prefix="/datasources")
@@ -97,7 +97,20 @@ async def test_datasource_connection(item_id: SqidPath) -> DatasourceTestRespons
 @router.post("/{item_id}/sync", name="bi.datasources.sync", summary="同步数据源元数据", dependencies=[require_buttons("B_BI_DS_SYNC")])
 async def sync_datasource_metadata(item_id: SqidPath):
     """拉取数据源全量 schema（SQLite / Phase 1）并写入 bi_table / bi_column。"""
+    user_id = get_current_user_id()
     tables, columns, errors = await ds_service.trigger_sync_by_id(item_id)
+    # 审计埋点
+    try:
+        from app.business.bi.services.audit import record_audit
+
+        await record_audit(
+            action="metadata_sync",
+            user_id=user_id,
+            datasource_id=decode_id(str(item_id)),
+            detail={"tables": tables, "columns": columns, "errors": errors},
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return Success(
         msg="同步完成",
         data={"tables": tables, "columns": columns, "errors": errors},

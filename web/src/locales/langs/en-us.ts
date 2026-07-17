@@ -1119,6 +1119,61 @@ const local: App.I18n.BaseSchema = {
             streaming: 'Streaming'
           }
         }
+      },
+      audit: {
+        title: 'Audit Panel',
+        subtitle: 'Full audit for query/export/CRUD: trace, SQL replay, trend, heatmap.',
+        kpi: {
+          total: 'Total Ops',
+          success: 'Success',
+          failed: 'Failed',
+          activeUsers: 'Active Users',
+          avgCost: 'Avg Cost'
+        },
+        filter: {
+          timeRange: 'Time Range',
+          userId: 'User ID',
+          keyword: 'SQL Hash / IP',
+          action: 'Action Type',
+          status: 'Status',
+          query: 'Query',
+          reset: 'Reset',
+          export: 'Export CSV'
+        },
+        tab: {
+          list: 'Audit List',
+          trend: 'Daily Trend',
+          heatmap: 'Hourly Heatmap'
+        },
+        table: {
+          time: 'Time',
+          user: 'User',
+          action: 'Action',
+          status: 'Status',
+          datasource: 'Datasource',
+          sqlHash: 'SQL Hash',
+          rowCount: 'Rows',
+          costMs: 'Cost',
+          ip: 'IP',
+          op: 'Op',
+          view: 'View',
+          empty: 'No audit records'
+        },
+        detail: {
+          title: 'Audit Detail',
+          basic: 'Basic Info',
+          execution: 'Execution',
+          sql: 'Original SQL',
+          copy: 'Copy',
+          detail: 'Detail'
+        },
+        empty: {
+          trend: 'No trend data',
+          heatmap: 'No heatmap data'
+        },
+        copyOk: 'Copied',
+        exportOk: 'CSV exported',
+        exportFail: 'Export failed'
       }
     },
     hr: {
