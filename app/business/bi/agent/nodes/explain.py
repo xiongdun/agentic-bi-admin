@@ -1,4 +1,10 @@
-"""Explain Agent — 把 SQL + 结果翻译成人话。"""
+"""Explain Agent — 把 SQL + 结果翻译成人话。
+
+Phase 1.x:
+- 删除 mock 兜底：LLM 异常（包括 NoLLMProviderError）直接上抛
+- final_sql 优先；否则用 draft_sql
+- draft_sql + final_sql 都为空 → 短路返回,不调 LLM
+"""
 
 from __future__ import annotations
 
@@ -10,7 +16,11 @@ from app.business.bi.llm import ChatMessage, ChatRequest, get_router
 
 
 async def explain_node(state: AgentState) -> AgentState:
-    """LLM 生成结果解读。"""
+    """LLM 生成结果解读。
+
+    失败时**不再 mock 兜底** — 让 NoLLMProviderError / 其他异常直接上抛,
+    由 ``chat.py`` SSE 转 error 事件。
+    """
     started = time.perf_counter()
     question = state.get("question", "")
     final_sql = state.get("final_sql", "") or state.get("draft_sql", "")
@@ -38,12 +48,8 @@ async def explain_node(state: AgentState) -> AgentState:
     request = ChatRequest(messages=messages, temperature=0.2)
 
     router = get_router()
-    provider = state.get("_llm_provider")
-    try:
-        resp = await router.achat(provider, request)
-    except Exception:  # noqa: BLE001
-        resp = await router.achat("mock", request)
-        state["fallback_used"] = state.get("fallback_used") or "mock"
+    # NoLLMProviderError / 其他 LLM 错误直接上抛
+    resp = await router.achat(state.get("_llm_provider"), request)
 
     state["explanation"] = resp.content.strip()
     state.setdefault("steps", []).append(
