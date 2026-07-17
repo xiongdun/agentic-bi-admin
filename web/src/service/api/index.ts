@@ -7,3 +7,4 @@ export * from './hr-personal';
 export * from './bi';
 export * from './bi-sql';
 export * from './bi-chat';
+export * from './bi-metric';

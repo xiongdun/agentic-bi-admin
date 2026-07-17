@@ -363,5 +363,52 @@ declare namespace Api {
       createdAt: string;
       sqlText: string | null;
     }
+
+    // ===================== Metric (业务度量) =====================
+
+    interface Metric {
+      id: string;
+      name: string;
+      displayName: string;
+      description: string | null;
+      sqlTemplate: string;
+      datasourceId: string;
+      unit: string | null;
+      ownerId: number;
+      statusType: Common.EnableStatus;
+      createdAt: string;
+      updatedAt: string;
+    }
+
+    type MetricSearchParams = CommonType.RecordNullable<
+      { name?: string; datasourceId?: string; statusType?: Common.EnableStatus } & CommonSearchParams
+    >;
+
+    type MetricList = Common.PaginatingQueryRecord<Metric>;
+
+    interface MetricCreateParams {
+      name: string;
+      displayName: string;
+      description?: string | null;
+      sqlTemplate: string;
+      datasourceId: string;
+      unit?: string | null;
+    }
+
+    interface MetricUpdateParams {
+      displayName?: string;
+      description?: string | null;
+      sqlTemplate?: string;
+      unit?: string | null;
+      statusType?: Common.EnableStatus;
+    }
+
+    interface MetricTestResult {
+      success: boolean;
+      placeholders?: string[];
+      datasource?: string;
+      dialect?: string;
+      error?: string;
+    }
   }
 }
