@@ -3,7 +3,8 @@
 支持：
 - 直接 LLM 调用（带 system / user 消息）
 - 输出在 ```sql ... ``` 中则提取
-- 调用失败 / 无 key 时回退到 mock
+- 有 metric_templates 时切换为 SQL_GEN_WITH_METRIC_USER（强约束）
+- 失败时**不再 mock 兜底**，让 NoLLMProviderError / 其他异常直接上抛
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import time
 from app.business.bi.agent.prompts import (
     SCHEMA_HEADER,
     SQL_GEN_PROMPT,
+    SQL_GEN_WITH_METRIC_USER,
     SYSTEM_BASE,
 )
 from app.business.bi.agent.state import AgentState, StepTrace
@@ -35,14 +37,34 @@ def _extract_sql(text: str) -> str | None:
 
 
 async def sql_gen_node(state: AgentState) -> AgentState:
-    """LLM 生成 SQL。"""
+    """LLM 生成 SQL。
+
+    行为分支：
+    - state["metric_templates"] 非空 → 使用 SQL_GEN_WITH_METRIC_USER
+    - 否则使用旧 SQL_GEN_PROMPT
+    - LLM 异常（包括 NoLLMProviderError）**直接上抛**,不再兜底 mock
+    """
     started = time.perf_counter()
     question = state.get("question", "")
     schema_text = state.get("schema_text", "(no schema)")
     dialect = state.get("dialect", "sqlite")
+    metric_templates: list[str] = list(state.get("metric_templates") or [])
 
     schema_header = SCHEMA_HEADER.format(dialect=dialect, schema_text=schema_text)
-    user_prompt = SQL_GEN_PROMPT.format(schema_header=schema_header, question=question)
+
+    if metric_templates:
+        user_prompt = SQL_GEN_WITH_METRIC_USER.format(
+            schema_header=schema_header,
+            question=question,
+            metric_count=len(metric_templates),
+            metric_templates="\n".join(
+                f"  {i + 1}. {t}" for i, t in enumerate(metric_templates)
+            ),
+        )
+    else:
+        user_prompt = SQL_GEN_PROMPT.format(
+            schema_header=schema_header, question=question
+        )
 
     messages = [
         ChatMessage(role="system", content=SYSTEM_BASE),
@@ -51,13 +73,9 @@ async def sql_gen_node(state: AgentState) -> AgentState:
     request = ChatRequest(messages=messages, temperature=0.1)
 
     router = get_router()
-    provider = state.get("_llm_provider")  # 允许从外部覆盖
-    try:
-        resp = await router.achat(provider, request)
-    except Exception:  # noqa: BLE001
-        # 失败兜底：回退到 mock
-        resp = await router.achat("mock", request)
-        state["fallback_used"] = "mock"
+    provider = state.get("_llm_provider")
+    # NoLLMProviderError / 其他 LLM 错误直接上抛 — 由 chat.py SSE 转 error 事件
+    resp = await router.achat(provider, request)
 
     draft = _extract_sql(resp.content) or resp.content.strip()
     # 用 sqlglot 做一遍规范化
@@ -71,7 +89,11 @@ async def sql_gen_node(state: AgentState) -> AgentState:
             node="sql_gen",
             started_at=started,
             ended_at=time.perf_counter(),
-            input={"question": question, "schema_chars": len(schema_text)},
+            input={
+                "question": question,
+                "schema_chars": len(schema_text),
+                "metric_count": len(metric_templates),
+            },
             output={"draft_sql": draft, "raw_excerpt": resp.content[:200]},
             tokens=resp.usage.total_tokens,
         ).to_dict()
