@@ -11,7 +11,12 @@ TEST_TORTOISE_ORM = {
     },
     "apps": {
         "app_system": {
-            "models": ["app.system.models", "app.system.radar.models", "app.business.hr.models"],
+            "models": [
+                "app.system.models",
+                "app.system.radar.models",
+                "app.business.hr.models",
+                "app.business.bi.models",
+            ],
             "default_connection": "conn_system",
         }
     },
