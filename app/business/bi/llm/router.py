@@ -7,23 +7,41 @@
   第一个 ``is_default=True`` 的 provider 作为默认。
 - **env 兜底** ：DB 中没有可用的 provider 时，按 ``APP_SETTINGS`` 中的环境变量
   注入（保留向后兼容）。
-- **mock 兜底** ：所有路径都保证有 mock 兜底，确保冒烟测试和本地无 Key 启动可用。
+- **不再有 mock 兜底** ：未配置 LLM provider 时 ``get()`` 抛 ``NoLLMProviderError``
+  (code=4001)，由调用方决定如何处理（前端跳 ``/bi/models``，API 层 SSE error 事件）。
 - **refresh()** ：provider 增删改后调用 ``refresh_router()`` 立即生效。
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.business.bi.llm.base import BaseChatModel, ChatRequest, ChatResponse
 from app.business.bi.llm.deepseek import DeepSeekChatModel
 from app.business.bi.llm.mock import MockChatModel
 from app.core.config import APP_SETTINGS
+from app.core.exceptions import BizError
 from app.core.log import log
 
 # provider.type 与 chat model 类的映射（Phase 1：openai_compatible / mock；
 # 后续接入 anthropic / ollama 只需在 _build_chat_model 里增加分支）。
 _CHAT_MODEL_KEY = "deepseek"  # 注册到 router 的固定 key（兼容旧调用）
+
+
+class NoLLMProviderError(BizError):
+    """未配置可用 LLM Provider(code=4001)。
+
+    业务侧应捕获此错误并提示用户前往 ``/bi/models`` 配置。
+    """
+
+    def __init__(
+        self,
+        *,
+        available: list[str] | None = None,
+        requested: str | None = None,
+    ) -> None:
+        super().__init__(code=4001, msg="未配置 LLM Provider，请先在 /bi/models 添加")
+        self.data = {"available": available or [], "requested": requested}
 
 
 def _build_chat_model(
@@ -64,21 +82,24 @@ class LLMRouter:
 
     支持：
     - register(name, model)
-    - get(name) → BaseChatModel
+    - get(name) → BaseChatModel（找不到抛 NoLLMProviderError）
     - achat(provider, request) / astream(provider, request)
     - refresh() — 从 DB 重建
+    - has_real_provider() — 是否至少配置了 1 个 provider
     """
 
-    _models: dict[str, BaseChatModel]
-    default_provider: str = "mock"
+    _models: dict[str, BaseChatModel] = field(default_factory=dict)
+    default_provider: str = ""
 
     @classmethod
     def build_default(cls) -> "LLMRouter":
-        """根据 APP_SETTINGS 构建默认路由器（仅 env 路径，DB 路径由 refresh 触发）。"""
+        """根据 APP_SETTINGS 构建默认路由器（仅 env 路径，DB 路径由 refresh 触发）。
+
+        Phase 1.x：不再默认注册 mock。env 中 ``DEEPSEEK_API_KEY`` 存在时启用 deepseek；
+        否则 router 是空的，调用方会收到 ``NoLLMProviderError``。
+        """
         router = cls(_models={})
-        # Mock 始终可用（兜底）
-        router._models["mock"] = MockChatModel()
-        router.default_provider = "mock"
+        router.default_provider = ""
 
         # env 兜底：DEEPSEEK_API_KEY
         api_key = getattr(APP_SETTINGS, "DEEPSEEK_API_KEY", "")
@@ -87,7 +108,7 @@ class LLMRouter:
                 router._models[_CHAT_MODEL_KEY] = DeepSeekChatModel(api_key=api_key)
                 router.default_provider = _CHAT_MODEL_KEY
                 log.info("LLM router: deepseek provider enabled (from env)")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 log.warning(f"LLM router: failed to init deepseek from env: {exc}")
 
         return router
@@ -95,14 +116,24 @@ class LLMRouter:
     def register(self, name: str, model: BaseChatModel) -> None:
         self._models[name] = model
 
-    def get(self, name: str | None = None) -> BaseChatModel:
+    def has_real_provider(self) -> bool:
+        """是否至少配置了 1 个可用的 LLM provider。"""
+        return bool(self._models) and bool(self.default_provider)
+
+    def get(self, name: str | None = None) -> "BaseChatModel":
+        """获取指定 provider 的 chat model，找不到抛 :class:`NoLLMProviderError`。
+
+        :param name: provider 名称，``None`` 时使用 :attr:`default_provider`。
+        :raises NoLLMProviderError: 未配置任何 provider 或指定 provider 不存在。
+        """
         if name is None:
             name = self.default_provider
         m = self._models.get(name)
         if m is None:
-            # 未找到指定 provider，回退到 mock
-            log.warning(f"LLM router: provider '{name}' not registered, falling back to mock")
-            return self._models["mock"]
+            raise NoLLMProviderError(
+                available=list(self._models.keys()),
+                requested=name,
+            )
         return m
 
     async def achat(self, provider: str | None, request: ChatRequest) -> ChatResponse:
@@ -118,7 +149,7 @@ class LLMRouter:
         """从 DB 重建 provider 注册表（每次 provider/model 变更后调用）。
 
         策略：
-        - 清空旧的非 ``mock`` provider；
+        - 清空旧的 provider；
         - 读取所有 ``is_enabled=True`` 的 provider，按其 type 注册；
         - 第一个 ``is_default=True`` 的 provider 作为 default_provider；
         - 若无 DB provider，则保留 env 兜底（不主动清掉 env provider）。
@@ -146,8 +177,8 @@ class LLMRouter:
                 if m is not None:
                     default_model_codes[p.id] = m.code
 
-        # 清掉旧非 mock / 非 env provider（保留 mock、deepseek 两个固定 key 的 env 兜底）
-        preserve_keys = {"mock", _CHAT_MODEL_KEY}
+        # 清掉旧非 env provider（保留 env deepseek 兜底）
+        preserve_keys = {_CHAT_MODEL_KEY}  # noqa: SIM401
         for k in list(self._models.keys()):
             if k not in preserve_keys:
                 del self._models[k]
@@ -169,17 +200,15 @@ class LLMRouter:
             if p.is_default:
                 db_default = p.code
 
-        # 更新默认 provider 顺序：DB default > env deepseek > mock
+        # 更新默认 provider 顺序：DB default > env deepseek > 空（让上层报错）
         if db_default is not None:
             self.default_provider = db_default
-        elif _CHAT_MODEL_KEY in self._models and self.default_provider not in self._models:
+        elif _CHAT_MODEL_KEY in self._models:
             self.default_provider = _CHAT_MODEL_KEY
-        elif self.default_provider not in self._models:
-            self.default_provider = "mock"
+        else:
+            self.default_provider = ""
 
-        # mock 必须存在
-        if "mock" not in self._models:
-            self._models["mock"] = MockChatModel()
+        # Phase 1.x：不再补 mock 兜底
 
 
 _default_router: LLMRouter | None = None
@@ -203,7 +232,9 @@ async def refresh_router() -> None:
     try:
         r = get_router()
         await r.refresh_from_db()
-        log.info(f"LLM router refreshed: default={r.default_provider}, providers={list(r._models.keys())}")
+        log.info(
+            f"LLM router refreshed: default={r.default_provider}, providers={list(r._models.keys())}"
+        )
     except Exception as exc:  # noqa: BLE001
         log.warning(f"LLM router refresh failed: {exc}")
     finally:
@@ -216,4 +247,10 @@ def reset_router_for_testing() -> None:
     _default_router = None
 
 
-__all__ = ["LLMRouter", "get_router", "refresh_router", "reset_router_for_testing"]
+__all__ = [
+    "LLMRouter",
+    "NoLLMProviderError",
+    "get_router",
+    "refresh_router",
+    "reset_router_for_testing",
+]

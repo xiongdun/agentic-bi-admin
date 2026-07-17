@@ -10,7 +10,12 @@ from app.business.bi.llm.base import (
 )
 from app.business.bi.llm.deepseek import DeepSeekChatModel
 from app.business.bi.llm.mock import MockChatModel
-from app.business.bi.llm.router import LLMRouter, get_router, refresh_router
+from app.business.bi.llm.router import (
+    LLMRouter,
+    NoLLMProviderError,
+    get_router,
+    refresh_router,
+)
 
 __all__ = [
     "BaseChatModel",
@@ -22,6 +27,7 @@ __all__ = [
     "DeepSeekChatModel",
     "MockChatModel",
     "LLMRouter",
+    "NoLLMProviderError",
     "get_router",
     "refresh_router",
 ]
