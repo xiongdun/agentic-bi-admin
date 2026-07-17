@@ -58,4 +58,61 @@ EXPLAIN_PROMPT = """你是 SQL 解释助手。基于以下信息给业务用户�
 """
 
 
-__all__ = ["SYSTEM_BASE", "SCHEMA_HEADER", "INTENT_PROMPT", "SQL_GEN_PROMPT", "EXPLAIN_PROMPT"]
+# ---- Intent Router (Phase 1.x) ----
+# 升级后的 intent 节点：LLM 必走，一次返回 {intent, metrics, reasoning}。
+# sql_gen 节点根据 metrics 是否非空切换 prompt（强约束 vs 自由生成）。
+
+INTENT_ROUTER_SYSTEM = """你是数据分析意图路由器，输出严格 JSON。"""
+
+INTENT_ROUTER_USER = """可用数据源方言: {dialect}
+
+Schema:
+{schema_text}
+
+可用指标（{metric_count} 个）:
+{metric_list}
+
+用户问题: {question}
+
+请只返回 JSON（不要任何 markdown / 代码块 / 注释）:
+{{
+  "intent": "metric" | "table" | "freeform",
+  "metrics": [{{"id": <int>, "reason": "<20字内原因>"}}],
+  "reasoning": "<50字内整体判断>"
+}}
+
+规则：
+1. 能用 1+ 指标直接回答 → intent="metric"，metrics 列出 id
+2. 聚合 / 排名 / 分桶 / 总数 → intent="table"
+3. 开放探索 / 选品类 → intent="freeform"
+4. 问候 / 与数据无关 → intent="freeform", metrics=[]
+5. metrics 可为 []"""
+
+
+# ---- SQL Gen with Metric Constraint ----
+# 当 intent 节点选出了 1+ metric,sql_gen 必须把模板表达式原样写进最终 SQL。
+
+SQL_GEN_WITH_METRIC_USER = """{schema_header}
+
+用户问题: {question}
+
+【必须使用】的指标模板（{metric_count} 个，必须在最终 SQL 中以原表达式出现）:
+{metric_templates}
+
+要求：
+- 必返回 ```sql ... ``` 块
+- 每个【必须使用】模板中的表达式必须原样出现在 SQL 中（可包在子查询 / CTE / SELECT 里）
+- 时间用 strftime 或 >= 'YYYY-MM-DD'
+- LIMIT 100"""
+
+
+__all__ = [
+    "SYSTEM_BASE",
+    "SCHEMA_HEADER",
+    "INTENT_PROMPT",
+    "SQL_GEN_PROMPT",
+    "EXPLAIN_PROMPT",
+    "INTENT_ROUTER_SYSTEM",
+    "INTENT_ROUTER_USER",
+    "SQL_GEN_WITH_METRIC_USER",
+]
