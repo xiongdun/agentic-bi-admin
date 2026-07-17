@@ -4,17 +4,24 @@
 - 会话归属 user_id + tenant_id（取自 CTX 上下文）
 - 发问题采用 SSE：每个 Agent 节点输出一行 ``step`` 事件，结束时输出 ``final``
 - DB 落库：先写 user 消息，再写 assistant 消息，agent_steps_json 留痕
+- 异常处理（Phase 1.x）：
+  - NoLLMProviderError(code=4001) → SSE error 事件,前端跳 /bi/models
+  - BizError(任意 code) → SSE error 事件,前端按 code 路由
+  - 其他 Exception → SSE error 事件,code=1500
 """
 
 from __future__ import annotations
 
 import json
 import time
+from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 from sse_starlette.sse import EventSourceResponse
 
+from app.business.bi.agent.state import AgentState
+from app.business.bi.llm.router import NoLLMProviderError
 from app.business.bi.models import (
     BiColumn,
     BiTable,
@@ -31,6 +38,7 @@ from app.core.base_schema import PageQueryBase, Success, SuccessExtra
 from app.core.ctx import CTX_ROLE_CODES, CTX_USER_ID
 from app.core.dependency import require_buttons
 from app.core.exceptions import BizError
+from app.core.log import log
 from app.core.sqids import decode_id, encode_id
 from app.utils import sse_heartbeat_wrapper, sse_keepalive_payload
 
