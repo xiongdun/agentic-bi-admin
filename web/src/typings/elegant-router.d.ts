@@ -43,6 +43,7 @@ declare module "@elegant-router/types" {
     "bi_audit": "/bi/audit";
     "bi_chat": "/bi/chat";
     "bi_metadata": "/bi/metadata";
+    "bi_metrics": "/bi/metrics";
     "bi_models": "/bi/models";
     "bi_sql-workbench": "/bi/sql-workbench";
     "function": "/function";
@@ -209,6 +210,7 @@ declare module "@elegant-router/types" {
     | "bi_audit"
     | "bi_chat"
     | "bi_metadata"
+    | "bi_metrics"
     | "bi_models"
     | "bi_sql-workbench"
     | "function_hide-child_one"

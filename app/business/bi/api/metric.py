@@ -6,7 +6,6 @@ from fastapi import APIRouter
 
 from app.business.bi.schemas.semantic import (
     MetricCreate,
-    MetricOut,
     MetricPageQuery,
     MetricUpdate,
 )

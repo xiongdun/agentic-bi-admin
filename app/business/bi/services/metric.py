@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 from app.business.bi.models.semantic import Metric
 from app.core.base_model import StatusType
 
@@ -69,9 +67,15 @@ async def delete_metric(metric_id: int) -> None:
 
 async def list_for_intent(datasource_id: int) -> list[dict]:
     """供 LLM intent router 用的精简列表。"""
-    rows = await Metric.filter(
-        datasource_id=datasource_id, status_type=StatusType.enable,
-    ).order_by("id").values("id", "name", "description", "sql_template")
+    rows = (
+        await Metric
+        .filter(
+            datasource_id=datasource_id,
+            status_type=StatusType.enable,
+        )
+        .order_by("id")
+        .values("id", "name", "description", "sql_template")
+    )
     return list(rows)
 
 
@@ -115,9 +119,7 @@ async def validate_template(metric_id: int) -> dict:  # noqa: ANN201
 
     # 2) 拼成完整 SELECT:把 FROM 注入到 WHERE / GROUP BY / ORDER BY / LIMIT / HAVING 之前
     #    这些子句在裸 SELECT 里必须有前置 FROM,不能直接放在 SELECT-list 后面
-    inject_token = " FROM " + " ".join(
-        f"{a} AS {a}" for a in placeholder_to_alias.values()
-    )
+    inject_token = " FROM " + " ".join(f"{a} AS {a}" for a in placeholder_to_alias.values())
     upper = substituted.upper()
     cut_markers = (" WHERE ", " GROUP BY ", " ORDER BY ", " HAVING ", " LIMIT ", " UNION ", " INTERSECT ", " EXCEPT ")
     cut_at = -1
@@ -128,9 +130,7 @@ async def validate_template(metric_id: int) -> dict:  # noqa: ANN201
     if cut_at == -1:
         test_sql = f"SELECT {substituted}{inject_token}"
     else:
-        test_sql = (
-            f"SELECT {substituted[:cut_at]}{inject_token}{substituted[cut_at:]}"
-        )
+        test_sql = f"SELECT {substituted[:cut_at]}{inject_token}{substituted[cut_at:]}"
 
     tree = safe_parse(test_sql, dialect=ds.type.value)
     if tree is None:
@@ -151,7 +151,11 @@ async def validate_template(metric_id: int) -> dict:  # noqa: ANN201
 
 
 __all__ = [
-    "list_metrics", "get_metric", "create_metric",
-    "update_metric", "delete_metric", "list_for_intent",
+    "list_metrics",
+    "get_metric",
+    "create_metric",
+    "update_metric",
+    "delete_metric",
+    "list_for_intent",
     "validate_template",
 ]

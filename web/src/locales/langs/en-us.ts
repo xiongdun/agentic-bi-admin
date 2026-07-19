@@ -1024,7 +1024,60 @@ const local: App.I18n.BaseSchema = {
         finalSql: 'Executed SQL',
         noData: 'No rows returned',
         error: 'Execution error',
-        sessionTitle: 'Session #{id}'
+        sessionTitle: 'Session #{id}',
+        messages: {
+          noPermission: 'No permission to access the chat workbench'
+        }
+      },
+      metrics: {
+        title: 'Metric Management',
+        subtitle: 'Pre-define SQL templates for business metrics; the Agent uses them as strong constraints.',
+        columns: {
+          name: 'Name',
+          displayName: 'Display Name',
+          description: 'Description',
+          sqlTemplate: 'SQL Template',
+          unit: 'Unit',
+          datasource: 'Datasource',
+          status: 'Status',
+          actions: 'Actions'
+        },
+        create: 'New Metric',
+        edit: 'Edit Metric',
+        test: 'Test Template',
+        testOk: 'Template valid',
+        testFailed: 'Template invalid',
+        testResult: {
+          datasource: 'Datasource',
+          dialect: 'Dialect',
+          placeholders: 'Placeholders'
+        },
+        search: {
+          datasource: 'Filter by datasource',
+          status: 'Filter by status'
+        },
+        status: {
+          enable: 'Enabled',
+          disable: 'Disabled'
+        },
+        actions: {
+          confirmDelete: 'Delete this metric?'
+        },
+        form: {
+          name: 'Name',
+          nameTip: 'Internal unique key (lowercase/digits), immutable after creation',
+          displayName: 'Display Name',
+          description: 'Description',
+          datasource: 'Datasource',
+          sqlTemplate: 'SQL Template',
+          sqlTemplatePlaceholder: "e.g. SUM({order}.amount) WHERE {order}.status = 'paid'",
+          sqlTemplateTip: 'Use {table_alias} for placeholders to be replaced at composition time',
+          unit: 'Unit',
+          formNameRequired: 'Name is required',
+          formDisplayNameRequired: 'Display name is required',
+          formSqlTemplateRequired: 'SQL template is required',
+          formDatasourceRequired: 'Datasource is required'
+        }
       },
       models: {
         title: 'Model Management',

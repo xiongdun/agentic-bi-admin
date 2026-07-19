@@ -26,6 +26,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   bi_audit: () => import("@/views/bi/audit/index.vue"),
   bi_chat: () => import("@/views/bi/chat/index.vue"),
   bi_metadata: () => import("@/views/bi/metadata/index.vue"),
+  bi_metrics: () => import("@/views/bi/metrics/index.vue"),
   bi_models: () => import("@/views/bi/models/index.vue"),
   "bi_sql-workbench": () => import("@/views/bi/sql-workbench/index.vue"),
   "function_hide-child_one": () => import("@/views/function/hide-child/one/index.vue"),

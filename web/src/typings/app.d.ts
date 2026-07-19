@@ -1281,6 +1281,59 @@ declare namespace App {
             noData: string;
             error: string;
             sessionTitle: string;
+            messages: {
+              noPermission: string;
+            };
+          };
+          metrics: {
+            title: string;
+            subtitle: string;
+            columns: {
+              name: string;
+              displayName: string;
+              description: string;
+              sqlTemplate: string;
+              unit: string;
+              datasource: string;
+              status: string;
+              actions: string;
+            };
+            create: string;
+            edit: string;
+            test: string;
+            testOk: string;
+            testFailed: string;
+            testResult: {
+              datasource: string;
+              dialect: string;
+              placeholders: string;
+            };
+            search: {
+              datasource: string;
+              status: string;
+            };
+            status: {
+              enable: string;
+              disable: string;
+            };
+            actions: {
+              confirmDelete: string;
+            };
+            form: {
+              name: string;
+              nameTip: string;
+              displayName: string;
+              description: string;
+              datasource: string;
+              sqlTemplate: string;
+              sqlTemplatePlaceholder: string;
+              sqlTemplateTip: string;
+              unit: string;
+              formNameRequired: string;
+              formDisplayNameRequired: string;
+              formSqlTemplateRequired: string;
+              formDatasourceRequired: string;
+            };
           };
           models: {
             title: string;

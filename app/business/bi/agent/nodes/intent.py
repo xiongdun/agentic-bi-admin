@@ -41,11 +41,7 @@ class IntentRouter:
             status_type=StatusType.enable,
         ).order_by("id")
 
-        metric_list = "\n".join(
-            f"  - id={m.id} name={m.name} desc={m.description or ''} "
-            f"template=`{m.sql_template}`"
-            for m in metrics
-        ) or "  (无)"
+        metric_list = "\n".join(f"  - id={m.id} name={m.name} desc={m.description or ''} template=`{m.sql_template}`" for m in metrics) or "  (无)"
 
         # 2) LLM 调用
         router = get_router()
@@ -100,7 +96,7 @@ class IntentRouter:
         id2template = {m.id: m.sql_template for m in metrics}
         state["metric_templates"] = [id2template[mid] for mid in state["metric_ids"]]
         state.setdefault("tokens_used", 0)
-        state["tokens_used"] += resp.usage.total_tokens
+        state["tokens_used"] = state["tokens_used"] + resp.usage.total_tokens  # type: ignore[operator]
 
         state.setdefault("steps", []).append(
             StepTrace(
@@ -114,9 +110,7 @@ class IntentRouter:
                 output={
                     "intent": intent,
                     "metric_ids": state["metric_ids"],
-                    "metric_names": [
-                        m.name for m in metrics if m.id in state["metric_ids"]
-                    ],
+                    "metric_names": [m.name for m in metrics if m.id in state["metric_ids"]],
                     "reasoning": str(parsed.get("reasoning", ""))[:100],
                 },
                 tokens=resp.usage.total_tokens,

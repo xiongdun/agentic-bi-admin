@@ -57,14 +57,10 @@ async def sql_gen_node(state: AgentState) -> AgentState:
             schema_header=schema_header,
             question=question,
             metric_count=len(metric_templates),
-            metric_templates="\n".join(
-                f"  {i + 1}. {t}" for i, t in enumerate(metric_templates)
-            ),
+            metric_templates="\n".join(f"  {i + 1}. {t}" for i, t in enumerate(metric_templates)),
         )
     else:
-        user_prompt = SQL_GEN_PROMPT.format(
-            schema_header=schema_header, question=question
-        )
+        user_prompt = SQL_GEN_PROMPT.format(schema_header=schema_header, question=question)
 
     messages = [
         ChatMessage(role="system", content=SYSTEM_BASE),

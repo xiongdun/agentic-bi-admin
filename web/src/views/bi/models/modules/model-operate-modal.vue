@@ -252,7 +252,7 @@ watch(visible, v => {
             v-model:value="model.defaultParamsText"
             type="textarea"
             :rows="3"
-            placeholder='e.g. {"temperature": 0.1, "top_p": 0.95}'
+            placeholder="e.g. {&quot;temperature&quot;: 0.1, &quot;top_p&quot;: 0.95}"
           />
         </NFormItemGi>
 

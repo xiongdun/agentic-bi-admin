@@ -232,9 +232,7 @@ async def refresh_router() -> None:
     try:
         r = get_router()
         await r.refresh_from_db()
-        log.info(
-            f"LLM router refreshed: default={r.default_provider}, providers={list(r._models.keys())}"
-        )
+        log.info(f"LLM router refreshed: default={r.default_provider}, providers={list(r._models.keys())}")
     except Exception as exc:  # noqa: BLE001
         log.warning(f"LLM router refresh failed: {exc}")
     finally:

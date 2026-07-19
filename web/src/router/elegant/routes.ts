@@ -121,6 +121,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'bi_metrics',
+        path: '/bi/metrics',
+        component: 'view.bi_metrics',
+        meta: {
+          title: 'bi_metrics',
+          i18nKey: 'route.bi_metrics'
+        }
+      },
+      {
         name: 'bi_models',
         path: '/bi/models',
         component: 'view.bi_models',

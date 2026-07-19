@@ -1020,7 +1020,60 @@ const local: App.I18n.BaseSchema = {
         finalSql: '执行后 SQL',
         noData: '本次查询无返回数据',
         error: '执行出错',
-        sessionTitle: '会话 #{id}'
+        sessionTitle: '会话 #{id}',
+        messages: {
+          noPermission: '没有权限访问对话工作台'
+        }
+      },
+      metrics: {
+        title: '指标管理',
+        subtitle: '为业务指标预设 SQL 模板，Agent 生成 SQL 时优先套用，提升准确度。',
+        columns: {
+          name: '业务名',
+          displayName: '展示名',
+          description: '业务描述',
+          sqlTemplate: 'SQL 模板',
+          unit: '单位',
+          datasource: '数据源',
+          status: '启用',
+          actions: '操作'
+        },
+        create: '新增指标',
+        edit: '编辑指标',
+        test: '测试模板',
+        testOk: '模板有效',
+        testFailed: '模板无效',
+        testResult: {
+          datasource: '数据源',
+          dialect: '方言',
+          placeholders: '占位符'
+        },
+        search: {
+          datasource: '按数据源筛选',
+          status: '按状态筛选'
+        },
+        status: {
+          enable: '启用',
+          disable: '禁用'
+        },
+        actions: {
+          confirmDelete: '确定删除该指标？'
+        },
+        form: {
+          name: '业务名',
+          nameTip: '内部唯一标识（英文/数字，创建后不可改）',
+          displayName: '展示名',
+          description: '业务描述',
+          datasource: '数据源',
+          sqlTemplate: 'SQL 模板',
+          sqlTemplatePlaceholder: '示例：SUM({order}.amount) WHERE {order}.status = \'paid\'',
+          sqlTemplateTip: '用 {表别名} 占位需被替换的表，Agent 拼装时自动注入',
+          unit: '单位',
+          formNameRequired: '请输入业务名',
+          formDisplayNameRequired: '请输入展示名',
+          formSqlTemplateRequired: '请输入 SQL 模板',
+          formDatasourceRequired: '请选择数据源'
+        }
       },
       models: {
         title: '模型管理',
