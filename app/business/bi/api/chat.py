@@ -12,12 +12,12 @@
 
 from __future__ import annotations
 
-import json
 import time
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
+from sse_starlette.event import JSONServerSentEvent
 from sse_starlette.sse import EventSourceResponse
 
 from app.business.bi.agent.state import AgentState
@@ -40,7 +40,7 @@ from app.core.dependency import require_buttons
 from app.core.exceptions import BizError
 from app.core.log import log
 from app.core.sqids import decode_id, encode_id
-from app.utils import sse_heartbeat_wrapper, sse_keepalive_payload
+from app.utils import sse_heartbeat_wrapper
 
 router = APIRouter(prefix="/chat")
 
@@ -236,7 +236,7 @@ async def _event_gen_with_error_handling(
     user_id: int,
     question: str,
     user_msg_id: int | None = None,
-) -> AsyncIterator[str]:
+) -> AsyncIterator[JSONServerSentEvent]:
     """SSE 事件流生成器 — 把 5 节点 agent chain 全部包在 try/except 里。
 
     异常映射：
@@ -267,7 +267,6 @@ async def _event_gen_with_error_handling(
         t0 = time.perf_counter()
         state = await _intent_node(state)
         yield _sse("step", {"node": "intent", "status": "done", "durationMs": int((time.perf_counter() - t0) * 1000), "intent": state.get("intent")})
-        yield sse_keepalive_payload()
 
         # 2) sql_gen
         yield _sse("step", {"node": "sql_gen", "status": "running"})
@@ -276,7 +275,6 @@ async def _event_gen_with_error_handling(
         t0 = time.perf_counter()
         state = await sql_gen_node(state)
         yield _sse("step", {"node": "sql_gen", "status": "done", "durationMs": int((time.perf_counter() - t0) * 1000), "draftSql": state.get("draft_sql")})
-        yield sse_keepalive_payload()
 
         # 3) validate
         yield _sse("step", {"node": "validate", "status": "running"})
@@ -285,7 +283,6 @@ async def _event_gen_with_error_handling(
         t0 = time.perf_counter()
         state = await sql_validate_node(state)
         yield _sse("step", {"node": "validate", "status": "done", "durationMs": int((time.perf_counter() - t0) * 1000), "error": state.get("validation_error")})
-        yield sse_keepalive_payload()
 
         # 4) executor
         yield _sse("step", {"node": "executor", "status": "running"})
@@ -295,7 +292,6 @@ async def _event_gen_with_error_handling(
         state = await executor_node(state)
         qr = state.get("query_result") or {}
         yield _sse("step", {"node": "executor", "status": "done", "durationMs": int((time.perf_counter() - t0) * 1000), "rowCount": qr.get("row_count"), "finalSql": state.get("final_sql")})
-        yield sse_keepalive_payload()
 
         # 5) explain (optional)
         explanation = ""
@@ -307,7 +303,6 @@ async def _event_gen_with_error_handling(
             state = await explain_node(state)
             explanation = state.get("explanation", "") or ""
             yield _sse("step", {"node": "explain", "status": "done", "durationMs": int((time.perf_counter() - t0) * 1000)})
-            yield sse_keepalive_payload()
 
         # 6) 落库 assistant message
         final_sql = state.get("final_sql") or state.get("draft_sql") or ""
@@ -361,13 +356,18 @@ async def _event_gen_with_error_handling(
         yield _sse("done", "[DONE]")
 
 
-def _sse(event: str, data) -> str:
-    """包装成 ``event: xxx\\ndata: ...\\n\\n`` 格式。"""
+def _sse(event: str, data) -> JSONServerSentEvent:
+    """生成 ``JSONServerSentEvent``,sse_starlette 会走 ``json.dumps`` 序列化 data。
+
+    直接 yield 字符串会被 sse_starlette 当 raw data 加 ``data:`` 前缀;yield dict
+    时 sse_starlette 用 ``str(data)``(单引号)非 JSON。改用 ``JSONServerSentEvent``
+    才能产出 ``event: xxx\\r\\ndata: {"key": ...}`` 的标准 SSE。
+    """
     if isinstance(data, (dict, list)):
-        payload = json.dumps(data, ensure_ascii=False, default=str)
+        payload = data
     else:
-        payload = str(data)
-    return f"event: {event}\ndata: {payload}\n\n"
+        payload = {"text": str(data)}
+    return JSONServerSentEvent(data=payload, event=event)
 
 
 # 模块级 intent_node 引用 — 供测试 monkey-patch,生产代码通过局部 import 拿最新实现

@@ -56,13 +56,14 @@ def sse_keepalive_payload() -> str:
 
 
 async def sse_heartbeat_wrapper(
-    source: AsyncIterator[str],
+    source: AsyncIterator[Any],
     *,
     interval_seconds: float = 15.0,
-) -> AsyncIterator[str]:
+) -> AsyncIterator[Any]:
     """在 `source` 空闲时插入心跳。
 
-    `source` yield 的是已经格式化的 SSE 字符串。
+    `source` yield 的是已格式化的 SSE 字符串或 `ServerSentEvent` /
+    `JSONServerSentEvent` 对象;sse_starlette 都会正确处理。
     """
     import asyncio
 

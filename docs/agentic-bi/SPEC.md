@@ -621,4 +621,24 @@ CREATE TABLE daily_stats (date, metric, value, tenant_id);
 
 ---
 
+## Phase 1.x: Metric 模板系统 + LLM 意图识别（2026-07-17）
+
+### 新增能力
+- Metric CRUD（`/business/bi/metrics/*`）+ 5 个预置电商 metric
+- `/bi/metrics` 管理页面（仅 `B_BI_METRIC_MANAGE` 可改）
+- `intent_node` 升级为 LLM 必走，一次返回 `{intent, metrics: [{id, reason}], reasoning}`
+- `sql_gen_node` 接受选中的 metric 模板作为强约束片段
+
+### 行为变更
+- 任何 LLM 失败 → `code=4001` 错误（SSE error 事件），前端跳 `/bi/models`
+- `MockChatModel` 兜底彻底删除
+- ChatWorkbench 不暴露"指标"概念（隐藏实现细节）
+
+### 数据迁移
+- `bi_metric` 表加 `datasource_id` FK（`just mm` 生成）
+- DB 漂移修复：`migrations/app_system/0002_drift_fix_bi_fk_columns.py` 用 `RunSQL` 补齐 `bi_chat_session.dataset_id / datasource_id` 与 `bi_chat_message.session_id / chart_id`（早期 `generate_schemas()` baseline 漂移）
+- SSE 序列化修复：`chat.py` 的 `_sse` 改用 `JSONServerSentEvent`，避免 sse_starlette 把字典 `data` 走 `str()` 单引号路径
+
+---
+
 **确认下一步后，依次产出 checklist.md / tasks.md / 代码。**

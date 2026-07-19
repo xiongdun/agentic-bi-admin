@@ -3,19 +3,26 @@
 - NoLLMProviderError 透传为 SSE error 事件,code=4001
 - BizError 透传 code
 - 通用 Exception → code=1500
-- _sse 工具函数 event / data 格式正确
+- _sse 工具函数 event / data 格式正确(产出 JSONServerSentEvent)
 """
+
+import json
 
 import pytest
 
 from app.business.bi.api.chat import _sse
-from app.core.exceptions import BizError
 from app.business.bi.llm.router import NoLLMProviderError
+from app.core.exceptions import BizError
+
+
+def _to_text(sse) -> str:
+    """``JSONServerSentEvent`` → 标准 SSE 字符串(``event: ...\\r\\ndata: ...\\r\\n\\r\\n``)。"""
+    return sse.encode().decode("utf-8")
 
 
 def test_sse_format():
-    """SSE 事件格式:event: <name>\\ndata: <payload>\\n\\n。"""
-    out = _sse("error", {"code": 4001, "message": "未配置"})
+    """SSE 事件格式:event: <name>\\r\\ndata: <payload>\\r\\n\\r\\n。"""
+    out = _to_text(_sse("error", {"code": 4001, "message": "未配置"}))
     assert "event: error" in out
     assert "data: " in out
     assert "4001" in out
@@ -23,9 +30,10 @@ def test_sse_format():
 
 
 def test_sse_done_format():
-    out = _sse("done", "[DONE]")
+    out = _to_text(_sse("done", "[DONE]"))
     assert "event: done" in out
-    assert "data: [DONE]" in out
+    assert "data: " in out
+    assert "[DONE]" in out
 
 
 def test_no_llm_provider_error_serializable_to_dict():
@@ -39,11 +47,11 @@ def test_no_llm_provider_error_serializable_to_dict():
 def test_sse_emits_error_event_on_no_llm():
     """NoLLMProviderError 经 _sse 序列化后能被前端 onError 捕获到 code。"""
     e = NoLLMProviderError(available=[], requested="x")
-    out = _sse("error", {"code": e.code, "message": e.msg})
+    out = _to_text(_sse("error", {"code": e.code, "message": e.msg}))
     # 前端解析 data 字段后能拿到 {code: 4001, message: '...'}
-    import json
     import re
-    m = re.search(r"data: (.+)\n", out)
+
+    m = re.search(r"data: (.+?)\r\n", out)
     assert m is not None
     payload = json.loads(m.group(1))
     assert payload["code"] == 4001
@@ -78,16 +86,17 @@ async def test_event_gen_error_includes_code_for_no_llm():
     finally:
         chat_api.intent_node = orig_intent  # type: ignore[assignment]
 
-    # 找到 error 事件
-    import json
+    # 找到 error 事件(每条 chunk 是 JSONServerSentEvent,event="error")
     import re
+
     error_payloads = []
     for c in chunks:
-        if "event: error" in c:
-            m = re.search(r"data: (.+)\n", c)
+        if getattr(c, "event", None) == "error":
+            text = c.encode().decode("utf-8")
+            m = re.search(r"data: (.+?)\r\n", text)
             if m:
                 error_payloads.append(json.loads(m.group(1)))
-    assert error_payloads, "expected at least one error event"
+    assert error_payloads, f"expected at least one error event, got {[getattr(c, 'event', None) for c in chunks]}"
     assert error_payloads[0]["code"] == 4001
 
 
@@ -114,14 +123,15 @@ async def test_event_gen_error_includes_code_for_bizerror():
     finally:
         chat_api.intent_node = orig_intent  # type: ignore[assignment]
 
-    import json
     import re
+
     found = False
     for c in chunks:
-        if "event: error" in c:
-            m = re.search(r"data: (.+)\n", c)
+        if getattr(c, "event", None) == "error":
+            text = c.encode().decode("utf-8")
+            m = re.search(r"data: (.+?)\r\n", text)
             if m:
                 p = json.loads(m.group(1))
                 if p.get("code") == 2401:
                     found = True
-    assert found, f"expected code=2401 in error event, got chunks={[c[:60] for c in chunks]}"
+    assert found, f"expected code=2401 in error event, got events={[getattr(c, 'event', None) for c in chunks]}"
