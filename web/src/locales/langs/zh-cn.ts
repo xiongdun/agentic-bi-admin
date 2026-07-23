@@ -305,6 +305,7 @@ const local: App.I18n.BaseSchema = {
     bi_metadata: '元数据中心',
     bi_models: '模型管理',
     'bi_sql-workbench': 'SQL 工作台',
+    bi_metrics: '指标管理',
     bi_audit: '审计面板',
     plugin: '插件示例',
     plugin_copy: '剪贴板',

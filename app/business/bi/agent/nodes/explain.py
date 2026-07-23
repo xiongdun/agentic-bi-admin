@@ -12,7 +12,7 @@ import time
 
 from app.business.bi.agent.prompts import EXPLAIN_PROMPT
 from app.business.bi.agent.state import AgentState, StepTrace
-from app.business.bi.llm import ChatMessage, ChatRequest, get_router
+from app.business.bi.llm import ChatMessage, ChatRequest, ensure_router
 
 
 async def explain_node(state: AgentState) -> AgentState:
@@ -47,7 +47,7 @@ async def explain_node(state: AgentState) -> AgentState:
     ]
     request = ChatRequest(messages=messages, temperature=0.2)
 
-    router = get_router()
+    router = await ensure_router()
     # NoLLMProviderError / 其他 LLM 错误直接上抛
     resp = await router.achat(state.get("_llm_provider"), request)
 

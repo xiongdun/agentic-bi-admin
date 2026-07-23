@@ -446,7 +446,12 @@ async def test_provider_connection(provider_id: int) -> tuple[bool, str | None, 
         await _update_test_status(p, ok=True)
         return True, None, None
     # 找一个能用的 model
-    m = await BiModel.filter(provider_id=p.id, is_enabled=True).order_by("-is_default", "order").first()
+    # 注意：fallback 排序必须与 app/business/bi/llm/router.py::refresh_from_db
+    # 保持一致（``order_by("order", "id")``），否则 test 路径和 chat 路径
+    # 会选出不同的 model，导致 "测试通过但用不起来"。
+    m = await BiModel.filter(provider_id=p.id, is_default=True, is_enabled=True).first()
+    if m is None:
+        m = await BiModel.filter(provider_id=p.id, is_enabled=True).order_by("order", "id").first()
     model_code = m.code if m else None
     # 用一个最小的 chat 请求来探测
     if not p.base_url:

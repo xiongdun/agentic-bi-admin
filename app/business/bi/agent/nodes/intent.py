@@ -16,7 +16,7 @@ from typing import Any
 
 from app.business.bi.agent.prompts import INTENT_ROUTER_SYSTEM, INTENT_ROUTER_USER
 from app.business.bi.agent.state import AgentState, StepTrace
-from app.business.bi.llm import ChatMessage, ChatRequest, get_router
+from app.business.bi.llm import ChatMessage, ChatRequest, ensure_router
 from app.business.bi.models.semantic import Metric
 from app.core.base_model import StatusType
 from app.core.log import log
@@ -44,7 +44,7 @@ class IntentRouter:
         metric_list = "\n".join(f"  - id={m.id} name={m.name} desc={m.description or ''} template=`{m.sql_template}`" for m in metrics) or "  (无)"
 
         # 2) LLM 调用
-        router = get_router()
+        router = await ensure_router()
         request = ChatRequest(
             messages=[
                 ChatMessage(role="system", content=self.system),

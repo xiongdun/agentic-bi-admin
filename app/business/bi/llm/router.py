@@ -166,14 +166,17 @@ class LLMRouter:
             return
 
         # 计算每个 provider 下的 default model
+        # 注意：fallback 排序必须与 app/business/bi/services/llm_api.py::test_provider_connection
+        # 保持一致（``order_by("order", "id")``），否则同一个 provider 在 test 路径
+        # 和 chat 路径会选出不同的 model，导致 "测试通过但用不起来"。
         default_model_codes: dict[int, str] = {}
         for p in providers:
             m = await BiModel.filter(provider_id=p.id, is_default=True, is_enabled=True).first()
             if m is not None:
                 default_model_codes[p.id] = m.code
             else:
-                # 没有 default 就取第一个启用的 model
-                m = await BiModel.filter(provider_id=p.id, is_enabled=True).order_by("order", "-id").first()
+                # 没有 default 就取第一个启用的 model（order 升序, id 升序 = 早添加的优先）
+                m = await BiModel.filter(provider_id=p.id, is_enabled=True).order_by("order", "id").first()
                 if m is not None:
                     default_model_codes[p.id] = m.code
 
@@ -185,6 +188,7 @@ class LLMRouter:
 
         # 注册 DB provider
         db_default: str | None = None
+        first_db_provider: str | None = None
         for p in providers:
             default_model_code = default_model_codes.get(p.id)
             m = _build_chat_model(
@@ -199,10 +203,15 @@ class LLMRouter:
             self._models[p.code] = m
             if p.is_default:
                 db_default = p.code
+            if first_db_provider is None:
+                first_db_provider = p.code
 
-        # 更新默认 provider 顺序：DB default > env deepseek > 空（让上层报错）
+        # 更新默认 provider 顺序：DB is_default > DB 第一个 > env deepseek > 空（让上层报错）
         if db_default is not None:
             self.default_provider = db_default
+        elif first_db_provider is not None:
+            # 没有显式标 default 的 provider 时，回退到第一个可用的
+            self.default_provider = first_db_provider
         elif _CHAT_MODEL_KEY in self._models:
             self.default_provider = _CHAT_MODEL_KEY
         else:
@@ -237,6 +246,24 @@ async def refresh_router() -> None:
         log.warning(f"LLM router refresh failed: {exc}")
     finally:
         _loading_lock = False
+
+
+async def ensure_router() -> "LLMRouter":
+    """惰性保证 router 已加载（每个 granian worker 独立缓存）。
+
+    多 worker 部署下，启动时只有 leader 会跑 ``init_data.init()`` 并 ``refresh_router``。
+    其他 worker 的 router 是空的。在用到 router 的入口前先调一次本函数，
+    若当前 worker router 为空则从 DB 重新加载。
+    """
+    r = get_router()
+    if r._models or r.default_provider:
+        return r
+    # 当前 worker 还没加载过；尝试从 DB 拉一次
+    try:
+        await refresh_router()
+    except Exception:  # noqa: BLE001
+        pass
+    return r
 
 
 def reset_router_for_testing() -> None:

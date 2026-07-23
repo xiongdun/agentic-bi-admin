@@ -34,6 +34,7 @@ from app.business.bi.schemas.chat import (
     ChatSessionCreate,
 )
 from app.business.bi.services.metadata_api import get_datasource_by_id
+from app.core.base_model import StatusType
 from app.core.base_schema import PageQueryBase, Success, SuccessExtra
 from app.core.ctx import CTX_ROLE_CODES, CTX_USER_ID
 from app.core.dependency import require_buttons
@@ -144,7 +145,7 @@ async def create_session(obj_in: ChatSessionCreate):
 async def list_sessions(obj_in: PageQueryBase = Depends()):
     """GET 列表：``PageQueryBase`` 通过 ``Depends()`` 从 query string 解析，避免 Pydantic 把它当 body 校验导致 ``必填字段缺失``。"""
     user_id = _user_id_or_fail()
-    qs = ChatSession.filter(user_id=user_id, status_type="enable").order_by("-last_message_at", "-id")
+    qs = ChatSession.filter(user_id=user_id, status_type=StatusType.enable).order_by("-last_message_at", "-id")
     total = await qs.count()
     rows = await qs.offset((obj_in.current - 1) * obj_in.size).limit(obj_in.size)
     return SuccessExtra(
@@ -344,16 +345,40 @@ async def _event_gen_with_error_handling(
         yield _sse("done", "[DONE]")
     except NoLLMProviderError as exc:
         log.warning(f"chat SSE: NoLLMProviderError: {exc}")
+        await _persist_error_message(sid, exc.msg, user_msg_id)
         yield _sse("error", {"code": exc.code, "message": exc.msg})
         yield _sse("done", "[DONE]")
     except BizError as exc:
         log.warning(f"chat SSE: BizError code={exc.code}: {exc.msg}")
+        await _persist_error_message(sid, exc.msg, user_msg_id)
         yield _sse("error", {"code": exc.code, "message": exc.msg})
         yield _sse("done", "[DONE]")
     except Exception as exc:  # noqa: BLE001
         log.exception("chat SSE: unexpected error")
+        await _persist_error_message(sid, f"执行失败：{exc}", user_msg_id)
         yield _sse("error", {"code": 1500, "message": f"internal error: {exc}"})
         yield _sse("done", "[DONE]")
+
+
+async def _persist_error_message(sid: int, error_text: str, user_msg_id: int | None) -> None:
+    """LLM 失败时也把 assistant 错误消息落到 bi_chat_message,前端读 detail 时不会看到空会话。"""
+    try:
+        await ChatMessage.create(
+            session_id=sid,
+            role=MessageRole.assistant,
+            content=f"执行出错：{error_text}",
+            thinking=None,
+            sql=None,
+            error=error_text,
+            tokens_used=0,
+            agent_steps_json=[],
+        )
+        s = await ChatSession.get(id=sid)
+        if s is not None:
+            s.last_message_at = _now()
+            await s.save(update_fields=["last_message_at"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning(f"chat SSE: failed to persist error message: {exc}")
 
 
 def _sse(event: str, data) -> JSONServerSentEvent:

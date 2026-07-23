@@ -125,10 +125,17 @@ async def test_provider(item_id: SqidPath):  # type: ignore[valid-type]
 )
 async def search_models(obj_in: BiModelSearch):
     """分页搜索模型（带 provider 信息）。"""
+    # provider_id 是 sqid,decode 后再传 service
+    provider_pk: int | None = None
+    if obj_in.provider_id:
+        try:
+            provider_pk = decode_id(obj_in.provider_id)
+        except (ValueError, TypeError):
+            return Fail(msg=f"providerId 无效: {obj_in.provider_id!r}")
     items, total = await llm_service.search_models(
         current=obj_in.current,
         size=obj_in.size,
-        provider_id=obj_in.provider_id,
+        provider_id=provider_pk,
         code=obj_in.code,
         type_=obj_in.type,
         is_enabled=obj_in.is_enabled,

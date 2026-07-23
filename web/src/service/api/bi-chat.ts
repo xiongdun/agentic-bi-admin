@@ -1,4 +1,8 @@
 import { request } from '../request';
+import { getServiceBaseURL } from '@/utils/service';
+
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const { baseURL: chatBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
 // ---- Chat sessions ----
 
@@ -50,7 +54,8 @@ export function openBiChatSend(
   }
 ): EventSource {
   // SSE via GET query string 是最稳的；这里用 POST + fetch + ReadableStream 更稳
-  const url = `/api/v1/business/bi/chat/sessions/${sessionId}/messages`;
+  // 走和 request lib 同样的 baseURL（dev 模式 + VITE_HTTP_PROXY=Y 时会被 Vite 代理）
+  const url = `${chatBaseURL}/business/bi/chat/sessions/${sessionId}/messages`;
   const token = (window.localStorage.getItem('accessToken') ?? '').replace(/"/g, '');
   const ctrl = new AbortController();
   fetch(url, {

@@ -119,7 +119,7 @@ class BiModelOut(SchemaBase):
 class BiModelSearch(PageQueryBase):
     """模型搜索。"""
 
-    provider_id: int | None = None
+    provider_id: str | None = None  # sqid，API 层 decode 后再传入 service
     code: str | None = None
     type: str | None = None
     is_enabled: bool | None = None

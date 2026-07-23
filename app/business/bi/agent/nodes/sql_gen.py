@@ -19,7 +19,7 @@ from app.business.bi.agent.prompts import (
     SYSTEM_BASE,
 )
 from app.business.bi.agent.state import AgentState, StepTrace
-from app.business.bi.llm import ChatMessage, ChatRequest, get_router
+from app.business.bi.llm import ChatMessage, ChatRequest, ensure_router
 from app.utils import safe_parse
 
 _SQL_BLOCK_RE = re.compile(r"```sql\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
@@ -68,7 +68,7 @@ async def sql_gen_node(state: AgentState) -> AgentState:
     ]
     request = ChatRequest(messages=messages, temperature=0.1)
 
-    router = get_router()
+    router = await ensure_router()
     provider = state.get("_llm_provider")
     # NoLLMProviderError / 其他 LLM 错误直接上抛 — 由 chat.py SSE 转 error 事件
     resp = await router.achat(provider, request)

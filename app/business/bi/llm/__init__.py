@@ -13,6 +13,7 @@ from app.business.bi.llm.mock import MockChatModel
 from app.business.bi.llm.router import (
     LLMRouter,
     NoLLMProviderError,
+    ensure_router,
     get_router,
     refresh_router,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "MockChatModel",
     "LLMRouter",
     "NoLLMProviderError",
+    "ensure_router",
     "get_router",
     "refresh_router",
 ]

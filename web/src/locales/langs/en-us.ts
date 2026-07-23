@@ -309,6 +309,7 @@ const local: App.I18n.BaseSchema = {
     bi_metadata: 'Metadata Center',
     'bi_sql-workbench': 'SQL Workbench',
     bi_models: 'Model Management',
+    bi_metrics: 'Metric Management',
     bi_audit: 'Audit Panel',
     plugin: 'Plugin',
     plugin_copy: 'Copy',

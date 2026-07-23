@@ -57,7 +57,14 @@ class DeepSeekChatModel(BaseChatModel):
         timeout: float = 60.0,
     ) -> None:
         self.api_key = api_key or getattr(APP_SETTINGS, "DEEPSEEK_API_KEY", "") or ""
-        self.base_url = (base_url or getattr(APP_SETTINGS, "DEEPSEEK_BASE_URL", "") or "https://api.deepseek.com").rstrip("/")
+        # base_url 容错：用户可能填 "https://host/v1" 或 "https://host/v1/" 或 "https://host"
+        # 统一剥到 host 根；endpoint 永远拼 "/v1/chat/completions"
+        raw_base = (base_url or getattr(APP_SETTINGS, "DEEPSEEK_BASE_URL", "") or "https://api.deepseek.com").rstrip("/")
+        for suffix in ("/v1",):
+            if raw_base.endswith(suffix):
+                raw_base = raw_base[: -len(suffix)].rstrip("/")
+                break
+        self.base_url = raw_base or "https://api.deepseek.com"
         self.default_model = default_model or getattr(APP_SETTINGS, "DEEPSEEK_MODEL", "") or "deepseek-chat"
         self._timeout = timeout
         self._client: httpx.AsyncClient | None = None
