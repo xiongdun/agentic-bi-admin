@@ -41,7 +41,7 @@ from app.core.dependency import require_buttons
 from app.core.exceptions import BizError
 from app.core.log import log
 from app.core.sqids import decode_id, encode_id
-from app.utils import sse_heartbeat_wrapper
+from app.utils import sse_done_event, sse_keepalive_payload
 
 router = APIRouter(prefix="/chat")
 
@@ -225,7 +225,7 @@ async def send_message(session_id: str, obj_in: ChatSendRequest):
         ):
             yield chunk
 
-    return EventSourceResponse(sse_heartbeat_wrapper(event_gen(), interval_seconds=15.0))
+    return EventSourceResponse(event_gen(), ping=15)
 
 
 async def _event_gen_with_error_handling(

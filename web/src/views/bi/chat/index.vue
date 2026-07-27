@@ -191,14 +191,15 @@ async function handleSend() {
       if (!currentStream.value) return;
       const list = currentStream.value.steps;
       const idx = list.findIndex(s => s.node === step.node);
-      const merged: Api.Bi.ChatAgentStep = {
+      const merged: Api.Bi.ChatAgentStep & { status?: string } = {
         node: step.node,
+        status: (step as { status?: string }).status,
         durationMs: Number(step.durationMs ?? 0),
         input: (step as { input?: Record<string, unknown> }).input,
         output: (step as { output?: Record<string, unknown> }).output,
         error: (step as { error?: string | null }).error ?? null
       };
-      if (idx >= 0) list[idx] = merged;
+      if (idx >= 0) list[idx] = { ...list[idx], ...merged };
       else list.push(merged);
       // 摘取 intent / draftSql
       const s = step as { intent?: string; draftSql?: string; finalSql?: string; rowCount?: number };
@@ -404,11 +405,17 @@ function stepNodeLabel(node: string) {
   return map[node] || node;
 }
 
-function stepStatusType(node: string): 'success' | 'warning' | 'error' | 'default' {
+function stepStatusType(node: string): 'success' | 'warning' | 'error' | 'info' | 'default' {
   const step = currentStream.value?.steps.find(s => s.node === node);
   if (!step) return 'default';
   if (step.error) return 'error';
-  return 'success';
+  const status = (step as { status?: string }).status;
+  if (status === 'running') return 'info'; // 蓝色
+  if (status === 'done') return 'success'; // 绿色
+  if (status === 'error') return 'error';
+  // 兼容旧 step（无 status 字段,只有 durationMs）: 视为 done
+  if (typeof step.durationMs === 'number') return 'success';
+  return 'default';
 }
 
 const STEP_NODES = ['intent', 'sql_gen', 'validate', 'executor', 'explain'] as const;

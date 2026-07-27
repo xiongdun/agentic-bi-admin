@@ -1,5 +1,6 @@
 import { request } from '../request';
 import { getServiceBaseURL } from '@/utils/service';
+import { getToken } from '@/store/modules/auth/shared';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
 const { baseURL: chatBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
@@ -56,7 +57,7 @@ export function openBiChatSend(
   // SSE via GET query string 是最稳的；这里用 POST + fetch + ReadableStream 更稳
   // 走和 request lib 同样的 baseURL（dev 模式 + VITE_HTTP_PROXY=Y 时会被 Vite 代理）
   const url = `${chatBaseURL}/business/bi/chat/sessions/${sessionId}/messages`;
-  const token = (window.localStorage.getItem('accessToken') ?? '').replace(/"/g, '');
+  const token = getToken();
   const ctrl = new AbortController();
   fetch(url, {
     method: 'POST',
@@ -70,7 +71,17 @@ export function openBiChatSend(
   })
     .then(async resp => {
       if (!resp.ok || !resp.body) {
-        handlers.onError(`HTTP ${resp.status}`);
+        // 尝试解析后端的 {"code":..., "msg":...} JSON,避免只看到 "HTTP 401"
+        let detail = `HTTP ${resp.status}`;
+        try {
+          const errBody = await resp.clone().json();
+          if (errBody && (errBody.msg || errBody.message)) {
+            detail = `HTTP ${resp.status}: ${errBody.msg || errBody.message}`;
+          }
+        } catch {
+          // ignore parse error
+        }
+        handlers.onError(detail);
         handlers.onDone();
         return;
       }

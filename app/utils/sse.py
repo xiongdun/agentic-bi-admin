@@ -64,12 +64,19 @@ async def sse_heartbeat_wrapper(
 
     `source` yield 的是已格式化的 SSE 字符串或 `ServerSentEvent` /
     `JSONServerSentEvent` 对象;sse_starlette 都会正确处理。
+
+    实现细节：使用 ``asyncio.timeout`` 上下文管理器**取消当前 await 但不取消
+    底层任务** —— 我们用 ``asyncio.shield`` 保护 ``__anext__`` 调用,这样心跳
+    超时只会让本 wrapper 切换到心跳路径,不会让上游 agent 节点的 LLM/DB 调用
+    被一并取消,避免出现 "心跳出一次后续不再出" 的死锁。
     """
     import asyncio
 
     while True:
         try:
-            msg = await asyncio.wait_for(source.__anext__(), timeout=interval_seconds)
+            # shield 让 __anext__ 本身不会被 wait_for 取消;wait_for 的 TimeoutError
+            # 只是让本 wrapper 进入心跳分支,__anext__ 实际仍可继续推进到下一个 yield
+            msg = await asyncio.wait_for(asyncio.shield(source.__anext__()), timeout=interval_seconds)
         except asyncio.TimeoutError:
             yield sse_keepalive_payload()
             continue
