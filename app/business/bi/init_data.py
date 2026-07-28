@@ -324,6 +324,30 @@ async def _warn_if_no_llm() -> None:
         pass
 
 
+async def _ensure_default_datasource_metadata(datasource: Datasource) -> None:
+    """启动时确保默认数据源的 BiTable/BiColumn 元数据已同步。
+
+    BiTable 为空(从未 sync 过)时跑一次 ``sync_datasource``;非空则跳过,
+    避免覆盖用户在 UI 里手工编辑过的列描述 / 标签。
+
+    不同步会导致 ``_build_schema_text`` 返回 ``(empty schema...)``,
+    LLM 拿不到真实表名,会把 metric.sql_template 里的 ``{order}`` 占位符
+    当字面量复制进 SQL → sqlglot 解析失败 → executor 跳过 → 无数据无解释。
+    """
+    try:
+        from app.business.bi.metadata.sync import sync_datasource
+        from app.business.bi.models import BiTable
+
+        existing = await BiTable.filter(datasource_id=datasource.id).count()
+        if existing > 0:
+            log.info(f"BI init: datasource '{datasource.name}' already has {existing} tables, skip metadata sync")
+            return
+        result = await sync_datasource(datasource)
+        log.info(f"BI init: synced metadata for datasource '{datasource.name}': {result.tables} tables, {result.columns} columns" + (f", errors={result.errors}" if result.errors else ""))
+    except Exception as exc:  # noqa: BLE001
+        log.warning(f"BI init: failed to sync default datasource metadata: {exc}")
+
+
 async def init() -> None:
     """bi 模块初始化入口：菜单/角色 + 默认租户 + 默认数据源 + LLM router 刷新。"""
     # 一次性迁移：旧版 route_name 用了 bi_sqlworkbench（无连字符），
@@ -357,6 +381,10 @@ async def init() -> None:
         pass
     # 启动时校验 LLM provider 配置；缺失则强 warn（chat 会返 4001）
     await _warn_if_no_llm()
+    # 启动时同步默认数据源元数据：BiTable 为空则自动 sync 一次,
+    # 否则 LLM 拿到 "(empty schema)" 会把 metric 模板里的 {order} 占位符
+    # 当字面量复制进 SQL,导致 sqlglot 解析失败 → executor 跳过 → 无数据无解释
+    await _ensure_default_datasource_metadata(datasource)
     # 启动时跑一次审计清理（避免历史数据无限增长）
     try:
         from app.business.bi.services.audit import cleanup_old_audit_logs

@@ -88,15 +88,18 @@ export function openBiChatSend(
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
+      // SSE 事件分隔符: 标准 CRLF(\r\n\r\n) 或 LF(\n\n) 都要兼容
+      // 后端 sse_starlette 默认用 CRLF,只匹配 \n\n 会拆不出事件 → 一直 streaming
+      const EVENT_BOUNDARY = /\r?\n\r?\n/;
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        // 按 \n\n 拆 event
-        let idx: number;
-        while ((idx = buf.indexOf('\n\n')) >= 0) {
-          const raw = buf.slice(0, idx);
-          buf = buf.slice(idx + 2);
+        // 按空行(含 CRLF)拆 event
+        let m: RegExpMatchArray | null;
+        while ((m = buf.match(EVENT_BOUNDARY)) !== null) {
+          const raw = buf.slice(0, m.index);
+          buf = buf.slice(m.index + m[0].length);
           parseSse(raw, handlers);
         }
       }
@@ -130,7 +133,8 @@ function parseSse(
     }
   }
   if (!dataStr) return;
-  if (dataStr === '[DONE]') {
+  // 后端 done 事件可能是裸 "[DONE]" 或 JSON 包装 {"text":"[DONE]"};都视为结束信号
+  if (dataStr === '[DONE]' || event === 'done') {
     handlers.onDone();
     return;
   }
