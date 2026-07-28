@@ -41,7 +41,6 @@ from app.core.dependency import require_buttons
 from app.core.exceptions import BizError
 from app.core.log import log
 from app.core.sqids import decode_id, encode_id
-from app.utils import sse_done_event, sse_keepalive_payload
 
 router = APIRouter(prefix="/chat")
 
@@ -355,8 +354,23 @@ async def _event_gen_with_error_handling(
         yield _sse("done", "[DONE]")
     except Exception as exc:  # noqa: BLE001
         log.exception("chat SSE: unexpected error")
-        await _persist_error_message(sid, f"执行失败：{exc}", user_msg_id)
-        yield _sse("error", {"code": 1500, "message": f"internal error: {exc}"})
+        # 上游 LLM 限流(429) / 5xx: 给用户友好提示,而不是直接把 httpx 异常堆栈甩出去
+        import httpx as _httpx
+
+        if isinstance(exc, _httpx.HTTPStatusError):
+            status = exc.response.status_code
+            if status == 429:
+                friendly = "上游 LLM 服务限流(429),已自动重试 3 次仍失败,请稍后再试"
+            elif 500 <= status < 600:
+                friendly = f"上游 LLM 服务异常({status}),已自动重试 3 次仍失败,请稍后再试"
+            else:
+                friendly = f"上游 LLM 返回 {status}: {exc.response.text[:120]}"
+            code = 4291 if status == 429 else 1500
+        else:
+            friendly = f"执行出错：{exc}"
+            code = 1500
+        await _persist_error_message(sid, friendly, user_msg_id)
+        yield _sse("error", {"code": code, "message": friendly})
         yield _sse("done", "[DONE]")
 
 

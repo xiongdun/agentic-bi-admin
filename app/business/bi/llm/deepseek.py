@@ -106,19 +106,49 @@ class DeepSeekChatModel(BaseChatModel):
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        client = self._get_client()
-        start = time.perf_counter()
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-        except httpx.HTTPError as exc:
-            log.error(f"DeepSeek request failed: {exc}")
-            raise
-        cost_ms = int((time.perf_counter() - start) * 1000)
-        if resp.status_code >= 400:
-            log.error(f"DeepSeek returned {resp.status_code}: {resp.text[:500]}")
-            resp.raise_for_status()
-        data = resp.json()
-        return self._parse_response(data, cost_ms=cost_ms)
+        # 上游限流(429) / 5xx 自动指数退避重试,最多 3 次
+        # 退避基数 2s,序列 2s / 4s / 8s(总等待最多 14s,3 次请求)
+        # 优先读 Retry-After 头,再退到指数退避
+        import asyncio
+
+        last_exc: httpx.HTTPStatusError | None = None
+        for attempt in range(3):
+            client = self._get_client()
+            start = time.perf_counter()
+            try:
+                resp = await client.post(url, json=payload, headers=headers)
+            except httpx.HTTPError as exc:
+                log.error(f"DeepSeek request failed (attempt {attempt + 1}/3): {exc}")
+                raise
+            cost_ms = int((time.perf_counter() - start) * 1000)
+            if resp.status_code == 429 or 500 <= resp.status_code < 600:
+                # 1) 优先读 Retry-After(秒数),否则 2^(attempt+1) 退避
+                retry_after = resp.headers.get("Retry-After")
+                if retry_after and retry_after.isdigit():
+                    wait_s = min(int(retry_after), 10)
+                else:
+                    wait_s = 2 ** (attempt + 1)  # 2, 4, 8
+                last_exc = httpx.HTTPStatusError(
+                    f"upstream {resp.status_code}",
+                    request=resp.request,
+                    response=resp,
+                )
+                log.warning(
+                    f"DeepSeek upstream {resp.status_code}, "
+                    f"retrying in {wait_s}s (attempt {attempt + 1}/3): "
+                    f"{resp.text[:200]}"
+                )
+                if attempt < 2:
+                    await asyncio.sleep(wait_s)
+                    continue
+                raise last_exc
+            if resp.status_code >= 400:
+                log.error(f"DeepSeek returned {resp.status_code}: {resp.text[:500]}")
+                resp.raise_for_status()
+            data = resp.json()
+            return self._parse_response(data, cost_ms=cost_ms)
+        # 不可达,只是为了让类型检查器满意
+        raise last_exc or RuntimeError("DeepSeek achat: exhausted retries")
 
     @staticmethod
     def _parse_response(data: dict, *, cost_ms: int | None = None) -> ChatResponse:

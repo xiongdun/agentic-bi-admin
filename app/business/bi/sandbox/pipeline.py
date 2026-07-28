@@ -104,7 +104,16 @@ async def run_pipeline(
 
     # 3. 租户行级注入
     if ctx.inject_tenant:
-        sql, err = inject_tenant_filter(sql, tenant_id=ctx.tenant_id, dialect=dialect)
+        # 从 BiColumn 元数据查出该数据源下所有有 tenant_id 字段的表(小写)
+        # 只对这些表的 SELECT 注入 WHERE alias.tenant_id=X,避免给维表
+        # (categories/products 等)注入导致 "no such column: tenant_id"
+        tables_with_tenant = await _get_tables_with_tenant(ctx.datasource.id)
+        sql, err = inject_tenant_filter(
+            sql,
+            tenant_id=ctx.tenant_id,
+            dialect=dialect,
+            tables_with_tenant=tables_with_tenant,
+        )
         if err:
             raise SqlExecutionDenied(f"租户过滤注入失败：{err}", kind="tenant")
 
@@ -168,6 +177,35 @@ async def _write_audit_log(
         from app.core.log import log
 
         log.warning("bi.pipeline: audit log write failed", exc_info=True)
+
+
+async def _get_tables_with_tenant(datasource_id: int) -> set[str]:
+    """查出该数据源下**有 tenant_id 字段**的表名集合(全小写)。
+
+    用于 inject_tenant_filter 决定哪些 SELECT 的主表能注入 tenant_id 过滤。
+    避免给维表(categories/products 等无 tenant_id 字段的表)注入导致
+    ``no such column: tenant_id``。
+
+    元数据查询失败时返回空集合 — 此时 inject_tenant_filter 不会注入
+    任何 SELECT,等价于关闭租户隔离(单租户演示环境可接受)。
+    """
+    try:
+        from app.business.bi.models import BiColumn
+
+        rows = await BiColumn.filter(name="tenant_id").values("table_id")
+        if not rows:
+            return set()
+        table_ids = [r["table_id"] for r in rows]
+        # 反查 table 名,只保留属于该 datasource 的
+        from app.business.bi.models import BiTable
+
+        table_rows = await BiTable.filter(id__in=table_ids, datasource_id=datasource_id).values("name")
+        return {r["name"].lower() for r in table_rows}
+    except Exception:  # noqa: BLE001
+        from app.core.log import log
+
+        log.warning(f"bi.pipeline: _get_tables_with_tenant(ds={datasource_id}) failed", exc_info=True)
+        return set()
 
 
 __all__ = [
