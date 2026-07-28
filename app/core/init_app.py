@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import orjson
 import pretty_errors
@@ -13,6 +14,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from app.core.autodiscover import discover_business_endpoint_rate_limits
 from app.core.code import Code
 from app.core.config import APP_SETTINGS
+from app.core.log import log
 from app.core.exceptions import (
     BizError,
     BizErrorHandle,
@@ -75,12 +77,26 @@ def _make_guard_config():
         "/api/v1/business/bi/audit",
     ]
 
+    # Windows + redis-py 4.6.0 + asyncio (ProactorEventLoop) 在 Guard 中间件的
+    # 第一个请求里调用 `Redis.from_url(...).ping()` 会抛 `OSError(22)` (`WSAEINVAL`)，
+    # 导致 Guard_redis_handler 初始化失败、所有受 Guard 保护的接口都返回 GuardRedisError。
+    # 主应用 `app/core/redis.py` 用同样的 from_url 却能成功（lifespan 启动期 vs 中间件
+    # task scope 的微妙差异，根因未定位）。Windows 开发环境下回退到内存限流即可；
+    # Linux/Docker 部署不受影响，仍走 Redis。
+    # 根治方案：`uv add "redis>=5.0"` 后改回 `enable_redis=True`。
+    enable_redis = sys.platform != "win32"
+    if not enable_redis:
+        log.warning(
+            "Guard: Redis 已禁用 (Windows + redis-py 4.6.0 asyncio 兼容性问题)，"
+            "回退到进程内限流。升级 redis-py 到 5.0+ 后可恢复 Redis 分布式限流。"
+        )
+
     return SecurityConfig(
         rate_limit=APP_SETTINGS.GUARD_RATE_LIMIT,
         rate_limit_window=APP_SETTINGS.GUARD_RATE_LIMIT_WINDOW,
         auto_ban_threshold=APP_SETTINGS.GUARD_AUTO_BAN_THRESHOLD,
         auto_ban_duration=APP_SETTINGS.GUARD_AUTO_BAN_DURATION,
-        enable_redis=True,
+        enable_redis=enable_redis,
         redis_url=APP_SETTINGS.REDIS_URL,
         enable_cors=False,  # CORS 已由 CORSMiddleware 处理
         enforce_https=False,
