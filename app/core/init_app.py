@@ -73,6 +73,25 @@ def _make_guard_config():
         custom_response_modifier=_guard_response_modifier,
         exclude_paths=["/docs", "/redoc", "/openapi.json", "/favicon.ico", "/static"],
         endpoint_rate_limits=endpoint_rate_limits,
+        # BI 模块的 SQL 工作台 / 智能对话 / 指标测试 / LLM Provider 配置会合法地
+        # 在请求体中携带 SQL 片段或自然语言问题，触发光速 guard 的 SQL 注入正则
+        # 误报；LLM Provider 的 base_url 字段也会触发 URL 可疑模式；数据源配置
+        # 的 host 字段会因 localhost / 内网 IP 触发 SSRF 正则误报，password /
+        # username 可能因特殊字符触发 SQL 注入正则。这里把这些 body 顶层 key
+        # 排除出渗透检测扫描。
+        excluded_detection_body_fields={
+            "sql",
+            "sql_template",
+            "question",
+            "api_key",
+            "base_url",
+            "host",
+            "port",
+            "username",
+            "password",
+            "database",
+            "extra_params",
+        },
     )
 
 

@@ -1,0 +1,255 @@
+/**
+ * BI 模块 i18n 类型声明
+ *
+ * 通过 `declare namespace App { namespace I18n { interface GeneratedPages } }`
+ * 声明合并，将 `page.bi` 子树类型注入到 `App.I18n.Schema['page']`。
+ *
+ * 见 `web/src/typings/app.d.ts` 中 `GeneratedPages` 接口的注释。
+ * 实际翻译键见 `zh-cn.ts` / `en-us.ts`，本文件保持与翻译键一一对应的类型签名。
+ */
+declare namespace App {
+  namespace I18n {
+    interface GeneratedPages {
+      bi: {
+        chat: {
+          title: string;
+          newSession: string;
+          deleteSession: string;
+          deleteSessionConfirm: string;
+          sessionList: string;
+          placeholder: string;
+          sendMessage: string;
+          sending: string;
+          stopGenerate: string;
+          inputHint: string;
+          selectDatasource: string;
+          regenerate: string;
+          exportPng: string;
+          exportCsv: string;
+          exporting: string;
+          copySql: string;
+          copySuccess: string;
+          emptySession: string;
+          emptyMessages: string;
+          noSessions: string;
+          steps: {
+            intent: string;
+            sql_gen: string;
+            sql_validate: string;
+            executor: string;
+            explain: string;
+            running: string;
+            success: string;
+            failed: string;
+            skipped: string;
+          };
+          roles: {
+            user: string;
+            assistant: string;
+            system: string;
+          };
+          messageStatus: {
+            success: string;
+            failed: string;
+          };
+        };
+        metadata: {
+          title: string;
+          datasourceList: string;
+          tableList: string;
+          columnList: string;
+          indexList: string;
+          foreignKeyList: string;
+          syncMetadata: string;
+          syncMetadataConfirm: string;
+          syncSuccess: string;
+          syncResult: string;
+          testConnection: string;
+          testSuccess: string;
+          testFailed: string;
+          viewTableStructure: string;
+          tableCount: string;
+          columnCount: string;
+          indexCount: string;
+          foreignKeyCount: string;
+          lastSyncedAt: string;
+          datasource: string;
+          tableName: string;
+          tableComment: string;
+          rowCount: string;
+          columnName: string;
+          dataType: string;
+          isPrimary: string;
+          isNullable: string;
+          defaultValue: string;
+          columnComment: string;
+          sampleValues: string;
+          indexName: string;
+          indexType: string;
+          indexColumns: string;
+          isUnique: string;
+          foreignKeyName: string;
+          columnNameSource: string;
+          refTable: string;
+          refColumn: string;
+          dbType: string;
+          host: string;
+          port: string;
+          username: string;
+          database: string;
+          extraParams: string;
+          selectDatasourceHint: string;
+          addDatasource: string;
+          editDatasource: string;
+          backToList: string;
+          datasourceDetail: string;
+          basicInfo: string;
+        };
+        'sql-workbench': {
+          title: string;
+          execute: string;
+          format: string;
+          explain: string;
+          clear: string;
+          history: string;
+          result: string;
+          noResult: string;
+          elapsed: string;
+          rows: string;
+          rowCount: string;
+          affectedRows: string;
+          preview: string;
+          previewTitle: string;
+          generateSelect: string;
+          viewStructure: string;
+          sqlPlaceholder: string;
+          selectDatasource: string;
+          sqlHistory: string;
+          executedAt: string;
+          sqlContent: string;
+          explainResult: string;
+        };
+        metrics: {
+          title: string;
+          create: string;
+          edit: string;
+          delete: string;
+          deleteConfirm: string;
+          test: string;
+          testResult: string;
+          name: string;
+          code: string;
+          description: string;
+          sqlTemplate: string;
+          sqlTemplateHint: string;
+          datasource: string;
+          chartType: string;
+          chartTypes: {
+            table: string;
+            line: string;
+            bar: string;
+            pie: string;
+            scatter: string;
+            area: string;
+          };
+          form: {
+            name: string;
+            code: string;
+            description: string;
+            sqlTemplate: string;
+            datasource: string;
+            chartType: string;
+            statusType: string;
+          };
+        };
+        models: {
+          title: string;
+          providerList: string;
+          modelList: string;
+          createProvider: string;
+          editProvider: string;
+          deleteProvider: string;
+          deleteProviderConfirm: string;
+          testProvider: string;
+          testResult: string;
+          createModel: string;
+          editModel: string;
+          deleteModel: string;
+          deleteModelConfirm: string;
+          providerName: string;
+          providerType: string;
+          apiKey: string;
+          apiKeyHint: string;
+          baseUrl: string;
+          defaultModel: string;
+          isDefault: string;
+          modelName: string;
+          displayName: string;
+          contextLength: string;
+          order: string;
+          isActive: string;
+          providerTypes: {
+            deepseek: string;
+            ollama: string;
+            qwen: string;
+            openai: string;
+            mock: string;
+            custom: string;
+          };
+          form: {
+            providerName: string;
+            providerType: string;
+            apiKey: string;
+            baseUrl: string;
+            defaultModel: string;
+            modelName: string;
+            displayName: string;
+            contextLength: string;
+            order: string;
+            statusType: string;
+          };
+        };
+        audit: {
+          title: string;
+          total: string;
+          successCount: string;
+          failedCount: string;
+          byEventType: string;
+          byAction: string;
+          byUser: string;
+          export: string;
+          exporting: string;
+          exportSuccess: string;
+          eventType: string;
+          action: string;
+          user: string;
+          username: string;
+          ip: string;
+          resource: string;
+          resourceId: string;
+          detail: string;
+          timeRange: string;
+          startTime: string;
+          endTime: string;
+          status: string;
+          traceId: string;
+          executionTime: string;
+          errorMessage: string;
+          viewDetail: string;
+          statuses: {
+            success: string;
+            failed: string;
+          };
+          eventTypes: {
+            datasource: string;
+            metadata: string;
+            chat: string;
+            sql: string;
+            metric: string;
+            llm: string;
+          };
+        };
+      };
+    }
+  }
+}

@@ -85,6 +85,83 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'bi',
+    path: '/bi',
+    component: 'layout.base',
+    meta: {
+      title: 'bi',
+      i18nKey: 'route.bi'
+    },
+    children: [
+      {
+        name: 'bi_audit',
+        path: '/bi/audit',
+        component: 'view.bi_audit',
+        meta: {
+          title: 'bi_audit',
+          i18nKey: 'route.bi_audit'
+        }
+      },
+      {
+        name: 'bi_chat',
+        path: '/bi/chat',
+        component: 'view.bi_chat',
+        meta: {
+          title: 'bi_chat',
+          i18nKey: 'route.bi_chat'
+        }
+      },
+      {
+        name: 'bi_metadata',
+        path: '/bi/metadata',
+        component: 'view.bi_metadata',
+        meta: {
+          title: 'bi_metadata',
+          i18nKey: 'route.bi_metadata'
+        }
+      },
+      {
+        name: 'bi_metadata-detail',
+        path: '/bi/metadata-detail/:id',
+        component: 'view.bi_metadata-detail',
+        props: true,
+        meta: {
+          title: 'bi_metadata-detail',
+          i18nKey: 'route.bi_metadata-detail',
+          hideInMenu: true,
+          activeMenu: 'bi_metadata'
+        }
+      },
+      {
+        name: 'bi_metrics',
+        path: '/bi/metrics',
+        component: 'view.bi_metrics',
+        meta: {
+          title: 'bi_metrics',
+          i18nKey: 'route.bi_metrics'
+        }
+      },
+      {
+        name: 'bi_models',
+        path: '/bi/models',
+        component: 'view.bi_models',
+        meta: {
+          title: 'bi_models',
+          i18nKey: 'route.bi_models'
+        }
+      },
+      {
+        name: 'bi_sql-workbench',
+        path: '/bi/sql-workbench',
+        component: 'view.bi_sql-workbench',
+        meta: {
+          title: 'bi_sql-workbench',
+          i18nKey: 'route.bi_sql-workbench'
+        }
+      }
+    ]
+  },
+  {
     name: 'function',
     path: '/function',
     component: 'layout.base',

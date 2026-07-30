@@ -77,6 +77,8 @@
     "echarts": "6.0.0",
     "jsbarcode": "3.12.3",
     "json5": "2.2.3",
+    "marked": "^18.0.7",
+    "monaco-editor": "^0.56.0",
     "naive-ui": "2.44.1",
     "nprogress": "0.2.0",
     "pinia": "3.0.4",
@@ -142,6 +144,6 @@
     "node": ">=20.19.0",
     "pnpm": ">=10.5.0"
   },
-  "website": "https://admin.soybeanjs.cn",
-  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
+  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72",
+  "website": "https://admin.soybeanjs.cn"
 }

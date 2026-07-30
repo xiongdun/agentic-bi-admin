@@ -1,0 +1,33 @@
+"""BI 智能数据分析模块 manifest。
+
+autodiscover 通过本文件识别模块：注册路由前缀 /api/v1/business/bi/，
+启动时由 leader worker 执行 init_data.init() 写入菜单/角色/按钮码种子。
+"""
+
+from __future__ import annotations
+
+from app.business.bi.api import router
+from app.business.bi.events import BI_EVENTS
+from app.business.bi.init_data import INIT_DATA, init
+from app.business.bi.policies import BI_DATA_POLICIES
+from app.utils import BusinessModule, BusinessRouter, PermissionSpec
+
+# BI 模块宽松限流配额：SSE 对话与 SQL 执行路径需要更高上限。
+# autodiscover 会自动合并到 fastapi-guard 配置。
+ENDPOINT_RATE_LIMITS = {
+    "/api/v1/business/bi/chat/send": (30, 60),
+    "/api/v1/business/bi/sql/run": (60, 60),
+}
+
+module = BusinessModule(
+    name="bi",
+    title="智能 BI",
+    version="0.1.0",
+    routers=[
+        BusinessRouter(router=router, auth="permission", tags=["智能 BI"]),
+    ],
+    init=init,
+    permissions=PermissionSpec(init_data=INIT_DATA),
+    events=BI_EVENTS,
+    data_policies=BI_DATA_POLICIES,
+)

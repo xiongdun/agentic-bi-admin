@@ -1,0 +1,267 @@
+# pyright: reportIncompatibleVariableOverride=false
+"""BI 智能数据分析模块 Tortoise ORM 模型。
+
+13 个模型，表名统一 ``biz_bi_*`` 前缀：
+
+- metadata：BiDatasource / BiTable / BiColumn / BiIndex / BiForeignKey
+- semantic：BiMetric
+- conversation：BiChatSession / BiChatMessage
+- llm：BiLLMProvider / BiLLMModel
+- audit：BiAuditLog
+- security：BiMaskingRule / BiQuotaConfig
+
+FK 关联引用本模块内模型时使用 ``app_system.<Model>`` 字符串
+（业务模块默认注册到 ``app_system`` app label，与 ``app/system`` 共享连接）。
+"""
+
+from tortoise import fields
+
+from app.utils import AuditMixin, BaseModel, SoftDeleteManager, SoftDeleteMixin, StatusType
+
+# ==================== metadata 子模块 ====================
+
+
+class BiDatasource(BaseModel, AuditMixin, SoftDeleteMixin):
+    """数据源配置"""
+
+    id = fields.IntField(primary_key=True)
+    name = fields.CharField(max_length=100, description="数据源名称")
+    db_type = fields.CharField(max_length=20, description="数据库类型（postgresql/mysql/clickhouse/trino/sqlite）")
+    host = fields.CharField(max_length=200, description="主机地址")
+    port = fields.SmallIntField(description="端口")
+    username = fields.CharField(max_length=100, description="用户名")
+    password = fields.CharField(max_length=500, description="密码（Fernet 加密存储）")
+    database = fields.CharField(max_length=200, description="数据库名")
+    extra_params = fields.JSONField(null=True, description="额外连接参数")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+    last_synced_at = fields.DatetimeField(null=True, description="最后同步时间")
+    tenant_id = fields.IntField(default=0, description="租户ID（行级 data_scope 作用域）")
+
+    class Meta:
+        table = "biz_bi_datasource"
+        manager = SoftDeleteManager()
+
+
+class BiTable(BaseModel, AuditMixin):
+    """表元数据"""
+
+    id = fields.IntField(primary_key=True)
+    datasource_id: int
+    datasource: fields.ForeignKeyRelation[BiDatasource] = fields.ForeignKeyField("app_system.BiDatasource", related_name="tables", on_delete=fields.CASCADE, description="所属数据源")
+    name = fields.CharField(max_length=200, description="表名")
+    comment = fields.CharField(max_length=500, null=True, blank=True, description="表注释")
+    row_count = fields.BigIntField(default=0, description="行数")
+    # 注：源表创建/更新时间用 source_ 前缀，避免与 AuditMixin 的 created_at / updated_at 冲突
+    source_created_at = fields.DatetimeField(null=True, description="源表创建时间")
+    source_updated_at = fields.DatetimeField(null=True, description="源表更新时间")
+
+    class Meta:
+        table = "biz_bi_table"
+
+
+class BiColumn(BaseModel, AuditMixin):
+    """列元数据"""
+
+    id = fields.IntField(primary_key=True)
+    table_id: int
+    table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="columns", on_delete=fields.CASCADE, description="所属表")
+    name = fields.CharField(max_length=200, description="列名")
+    data_type = fields.CharField(max_length=100, description="数据类型")
+    is_primary = fields.BooleanField(default=False, description="是否主键")
+    is_nullable = fields.BooleanField(default=True, description="是否可空")
+    default_value = fields.CharField(max_length=200, null=True, blank=True, description="默认值")
+    comment = fields.CharField(max_length=500, null=True, blank=True, description="列注释")
+    sample_values = fields.JSONField(null=True, description="采样值")
+
+    class Meta:
+        table = "biz_bi_column"
+
+
+class BiIndex(BaseModel, AuditMixin):
+    """索引元数据"""
+
+    id = fields.IntField(primary_key=True)
+    table_id: int
+    table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="indexes", on_delete=fields.CASCADE, description="所属表")
+    name = fields.CharField(max_length=200, description="索引名")
+    index_type = fields.CharField(max_length=50, description="索引类型")
+    columns = fields.JSONField(description="包含的列数组")
+    is_unique = fields.BooleanField(default=False, description="是否唯一索引")
+
+    class Meta:
+        table = "biz_bi_index"
+
+
+class BiForeignKey(BaseModel, AuditMixin):
+    """外键关系元数据"""
+
+    id = fields.IntField(primary_key=True)
+    table_id: int
+    table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="foreign_keys", on_delete=fields.CASCADE, description="所属表")
+    name = fields.CharField(max_length=200, description="外键名")
+    column_name = fields.CharField(max_length=200, description="源列名")
+    ref_table = fields.CharField(max_length=200, description="目标表名")
+    ref_column = fields.CharField(max_length=200, description="目标列名")
+
+    class Meta:
+        table = "biz_bi_foreign_key"
+
+
+# ==================== semantic 子模块 ====================
+
+
+class BiMetric(BaseModel, AuditMixin):
+    """指标定义"""
+
+    id = fields.IntField(primary_key=True)
+    name = fields.CharField(max_length=100, description="指标名称")
+    code = fields.CharField(max_length=50, unique=True, description="指标编码")
+    description = fields.TextField(null=True, blank=True, description="指标描述")
+    datasource_id: int
+    datasource: fields.ForeignKeyRelation[BiDatasource] = fields.ForeignKeyField("app_system.BiDatasource", related_name="metrics", on_delete=fields.CASCADE, description="所属数据源")
+    sql_template = fields.TextField(description="SQL 模板（含 {xxx} 占位符）")
+    chart_type = fields.CharField(max_length=50, null=True, blank=True, description="推荐图表类型")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+
+    class Meta:
+        table = "biz_bi_metric"
+
+
+# ==================== conversation 子模块 ====================
+
+
+class BiChatSession(BaseModel, AuditMixin):
+    """对话会话"""
+
+    id = fields.IntField(primary_key=True)
+    title = fields.CharField(max_length=200, description="会话标题")
+    user_id = fields.IntField(description="创建用户ID")
+    last_message_at = fields.DatetimeField(null=True, description="最后消息时间")
+    tenant_id = fields.IntField(default=0, description="租户ID（行级 data_scope 作用域）")
+
+    class Meta:
+        table = "biz_bi_chat_session"
+
+
+class BiChatMessage(BaseModel, AuditMixin):
+    """对话消息"""
+
+    id = fields.IntField(primary_key=True)
+    session_id: int
+    session: fields.ForeignKeyRelation[BiChatSession] = fields.ForeignKeyField("app_system.BiChatSession", related_name="messages", on_delete=fields.CASCADE, description="所属会话")
+    role = fields.CharField(max_length=20, description="角色（user/assistant/system）")
+    content = fields.TextField(description="消息内容")
+    sql_text = fields.TextField(null=True, blank=True, description="生成的 SQL")
+    sql_result = fields.JSONField(null=True, description="SQL 执行结果")
+    agent_steps_json = fields.JSONField(null=True, description="Agent 流水线步骤留痕")
+    intent_type = fields.CharField(max_length=50, null=True, blank=True, description="意图类型")
+    execution_time_ms = fields.IntField(default=0, description="执行耗时（毫秒）")
+    token_usage = fields.JSONField(null=True, description="Token 用量")
+    status = fields.CharField(max_length=20, description="状态（success/failed）")
+    error_message = fields.TextField(null=True, blank=True, description="错误信息")
+
+    class Meta:
+        table = "biz_bi_chat_message"
+
+
+# ==================== llm 子模块 ====================
+
+
+class BiLLMProvider(BaseModel, AuditMixin):
+    """LLM Provider 配置"""
+
+    id = fields.IntField(primary_key=True)
+    name = fields.CharField(max_length=100, description="Provider 名称")
+    provider_type = fields.CharField(max_length=20, description="Provider 类型（deepseek/ollama/qwen/openai/mock/custom）")
+    api_key = fields.CharField(max_length=500, description="API Key（Fernet 加密存储）")
+    base_url = fields.CharField(max_length=500, null=True, blank=True, description="Base URL")
+    default_model = fields.CharField(max_length=100, null=True, blank=True, description="默认模型名")
+    is_default = fields.BooleanField(default=False, description="是否默认 Provider")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+    extra_config = fields.JSONField(null=True, description="额外配置（Temperature/Max Tokens/Top P 等）")
+
+    class Meta:
+        table = "biz_bi_llm_provider"
+
+
+class BiLLMModel(BaseModel, AuditMixin):
+    """LLM 模型配置"""
+
+    id = fields.IntField(primary_key=True)
+    provider_id: int
+    provider: fields.ForeignKeyRelation[BiLLMProvider] = fields.ForeignKeyField("app_system.BiLLMProvider", related_name="models", on_delete=fields.CASCADE, description="所属 Provider")
+    name = fields.CharField(max_length=100, description="模型名（如 deepseek-chat）")
+    display_name = fields.CharField(max_length=200, null=True, blank=True, description="展示名")
+    context_length = fields.IntField(default=4096, description="上下文长度")
+    order = fields.SmallIntField(default=0, description="排序")
+    is_active = fields.BooleanField(default=True, description="是否启用")
+
+    class Meta:
+        table = "biz_bi_llm_model"
+
+
+# ==================== audit 子模块 ====================
+
+
+class BiAuditLog(BaseModel, AuditMixin):
+    """BI 审计日志
+
+    ``created_at`` 由 ``AuditMixin`` 提供（``auto_now_add=True``），
+    不在此重复声明。
+    """
+
+    id = fields.IntField(primary_key=True)
+    trace_id = fields.CharField(max_length=100, null=True, blank=True, description="链路追踪 ID")
+    event_type = fields.CharField(
+        max_length=50,
+        description="事件类型（USER_BEHAVIOR/QUERY_OPERATION/SYSTEM_OPERATION/PERMISSION_CHANGE/BUTTON_CLICK）",
+    )
+    action = fields.CharField(max_length=100, description="具体操作")
+    user_id = fields.BigIntField(null=True, description="操作用户ID")
+    username = fields.CharField(max_length=100, null=True, blank=True, description="操作用户名")
+    ip_address = fields.CharField(max_length=50, null=True, blank=True, description="IP 地址")
+    resource_type = fields.CharField(max_length=50, null=True, blank=True, description="资源类型")
+    resource_id = fields.CharField(max_length=100, null=True, blank=True, description="资源ID")
+    detail = fields.JSONField(null=True, description="详细信息")
+    status = fields.CharField(max_length=20, description="状态（success/failed）")
+    error_message = fields.TextField(null=True, blank=True, description="错误信息")
+    execution_time_ms = fields.IntField(default=0, description="执行耗时（毫秒）")
+
+    class Meta:
+        table = "biz_bi_audit_log"
+
+
+# ==================== security 子模块 ====================
+
+
+class BiMaskingRule(BaseModel, AuditMixin):
+    """列脱敏规则"""
+
+    id = fields.IntField(primary_key=True)
+    name = fields.CharField(max_length=100, description="规则名称")
+    column_pattern = fields.CharField(max_length=200, description="列名匹配模式（支持正则）")
+    mask_type = fields.CharField(max_length=20, description="脱敏类型（phone/idcard/email/bankcard/custom）")
+    mask_char = fields.CharField(max_length=10, default="*", description="脱敏占位字符")
+    keep_prefix = fields.SmallIntField(default=0, description="保留前缀位数")
+    keep_suffix = fields.SmallIntField(default=0, description="保留后缀位数")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+
+    class Meta:
+        table = "biz_bi_masking_rule"
+
+
+class BiQuotaConfig(BaseModel, AuditMixin):
+    """配额配置"""
+
+    id = fields.IntField(primary_key=True)
+    name = fields.CharField(max_length=100, description="配置名称")
+    max_rows = fields.IntField(default=10000, description="最大行数")
+    timeout_seconds = fields.IntField(default=30, description="超时秒数")
+    breaker_threshold = fields.SmallIntField(default=10, description="熔断阈值")
+    breaker_window_seconds = fields.IntField(default=60, description="熔断窗口秒数")
+    scope_type = fields.CharField(max_length=20, description="作用域类型（global/user/datasource）")
+    scope_id = fields.BigIntField(null=True, description="作用域ID")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+
+    class Meta:
+        table = "biz_bi_quota_config"
