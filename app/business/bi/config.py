@@ -61,6 +61,11 @@ class BusinessSettings(BaseSettings):
     # 流式 fetchmany 批大小
     BI_ASYNC_QUERY_BATCH_SIZE: int = 1000
 
+    # ==================== Dashboard ====================
+    BI_DASHBOARD_REFRESH_CONCURRENCY: int = 5
+    BI_DASHBOARD_MAX_ITEMS: int = 30
+    BI_DASHBOARD_REFRESH_TIMEOUT: int = 25
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

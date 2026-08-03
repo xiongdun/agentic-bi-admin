@@ -111,6 +111,7 @@ class Code:
     # 42xx — BI 图表模块
     BI_CHART_NOT_FOUND = "4200"  # 图表不存在
     BI_DATASOURCE_UNAVAILABLE = "4201"  # 数据源不可用（刷新图表时）
+    BI_DASHBOARD_NOT_FOUND = "4202"  # 仪表盘不存在
 
     # 41xx — BI 异步大查询
     BI_ASYNC_QUERY_NOT_ENABLED = "4110"  # 异步大查询功能未开启
