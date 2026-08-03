@@ -14,6 +14,8 @@ FK 关联引用本模块内模型时使用 ``app_system.<Model>`` 字符串
 （业务模块默认注册到 ``app_system`` app label，与 ``app/system`` 共享连接）。
 """
 
+from datetime import datetime
+
 from tortoise import fields
 
 from app.utils import AuditMixin, BaseModel, SoftDeleteManager, SoftDeleteMixin, StatusType
@@ -304,3 +306,55 @@ class BiChart(BaseModel, AuditMixin, SoftDeleteMixin):
     class Meta:
         table = "biz_bi_chart"
         manager = SoftDeleteManager()
+
+
+# ==================== async query 子模块 ====================
+
+
+class BiQueryTask(BaseModel, AuditMixin, SoftDeleteMixin):
+    """异步查询任务。
+
+    记录一次异步 SQL 执行的完整生命周期：提交 → 运行 → 完成/失败/取消。
+    小结果（≤ ``BI_ASYNC_QUERY_PREVIEW_ROWS``）直接存 ``result_snapshot`` JSONField；
+    大结果落 CSV 到 ``BI_ASYNC_QUERY_CSV_DIR``，``result_uri`` 存相对路径。
+
+    行级隔离：``tenant_id`` 存 ``user.id``（与 BiChart / BiChatSession 一致）。
+    """
+
+    id = fields.IntField(primary_key=True, description="主键ID")
+    name: str = fields.CharField(max_length=100, null=True, blank=True, description="任务名称（可选，默认自动生成）")
+    datasource_id: int
+    datasource: fields.ForeignKeyRelation[BiDatasource] = fields.ForeignKeyField(
+        "app_system.BiDatasource",
+        related_name="query_tasks",
+        on_delete=fields.CASCADE,
+        description="所属数据源",
+    )
+    sql_text: str = fields.TextField(description="来源 SQL（提交时已过白名单校验）")
+    # 实时状态在 Redis Hash，这里存最终快照（runner 完成时回写）
+    status: str = fields.CharField(max_length=20, default="pending", description="任务状态：pending/running/success/failed/cancelled")
+    progress: int = fields.IntField(default=0, description="进度百分比 0-100")
+    rows_fetched: int = fields.IntField(default=0, description="已扫描行数")
+    elapsed_ms: int = fields.IntField(default=0, description="执行耗时（毫秒）")
+    # 结果存储
+    result_snapshot: dict | None = fields.JSONField(null=True, description="结果预览（≤1万行，结构 {columns, rows, rowCount, elapsedMs, isTruncated}）")
+    result_uri: str | None = fields.CharField(max_length=255, null=True, description="CSV 文件相对路径（大结果时）")
+    result_row_count: int = fields.IntField(default=0, description="结果总行数")
+    result_is_truncated: bool = fields.BooleanField(default=False, description="结果是否被截断（仅预览截断，CSV 完整）")
+    # 错误
+    error_message: str | None = fields.TextField(null=True, description="失败/取消原因")
+    # 时间
+    started_at: datetime | None = fields.DatetimeField(null=True, description="开始执行时间")
+    finished_at: datetime | None = fields.DatetimeField(null=True, description="完成/失败/取消时间")
+    # 行级隔离
+    tenant_id: int = fields.IntField(default=0, description="租户ID（行级 data_scope 作用域，存 user.id）")
+    # 来源
+    source: str = fields.CharField(max_length=20, default="manual", description="提交来源：manual（手动）/ auto_transfer（同步软超时转异步）")
+
+    class Meta:
+        table = "biz_bi_query_task"
+        manager = SoftDeleteManager()
+        indexes = [
+            ("tenant_id", "status"),
+            ("tenant_id", "created_at"),
+        ]

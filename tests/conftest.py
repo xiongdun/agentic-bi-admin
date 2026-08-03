@@ -201,3 +201,26 @@ async def bi_datasource(app, seed_data):
         updated_by=str(user.id),
     )
     return ds
+
+
+@pytest_asyncio.fixture(loop_scope="session")
+async def bi_query_task(app, bi_datasource):
+    """Seed a BiQueryTask owned by the super admin (tenant_id = user.id)."""
+    from app.business.bi.models import BiQueryTask
+
+    user = bi_datasource.tenant_id  # 与 bi_datasource 同一 user
+
+    # 清理上一轮残留
+    await BiQueryTask.all().delete()
+
+    task = await BiQueryTask.create(
+        name="测试任务",
+        datasource_id=bi_datasource.id,
+        sql_text="SELECT 1",
+        status="pending",
+        tenant_id=user,
+        source="manual",
+        created_by=str(user),
+        updated_by=str(user),
+    )
+    return task
