@@ -46,7 +46,7 @@ function stopGenerate() {
     <div class="max-w-1200px mx-auto">
       <!-- ChatGPT 风格输入容器：圆角 + 阴影 + 内嵌发送按钮 -->
       <div
-        class="input-shell relative rounded-16px border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all"
+        class="input-shell relative rounded-16px border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md transition-all"
         :class="{ 'input-shell--disabled': disabled }"
       >
         <NInput
@@ -95,7 +95,7 @@ function stopGenerate() {
 
 /* 让 NInput 内部 textarea 贴合容器圆角并去掉默认边框 */
 .chat-textarea :deep(.n-input__textarea-el) {
-  padding: 14px 56px 14px 16px;
+  padding: 1px 1px 1px 1px;
   font-size: 15px;
   line-height: 1.6;
 }

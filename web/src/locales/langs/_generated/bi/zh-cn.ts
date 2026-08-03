@@ -8,7 +8,10 @@ const biLocale = {
     'bi_sql-workbench': 'SQL 工作台',
     bi_metrics: '指标管理',
     bi_models: 'LLM 配置',
-    bi_audit: '审计日志'
+    bi_audit: '审计日志',
+    bi_charts: '图表库',
+    'bi_chart-detail': '图表详情',
+    bi_share: '分享图表'
   },
   page: {
     bi: {
@@ -144,14 +147,18 @@ const biLocale = {
         sqlTemplate: 'SQL 模板',
         sqlTemplateHint: '支持 {xxx} 占位符，例如 SELECT * FROM orders WHERE date >= {start_date}',
         datasource: '数据源',
-        chartType: '图表类型',
+        chartType: '图表',
         chartTypes: {
           table: '表格',
           line: '折线图',
           bar: '柱状图',
           pie: '饼图',
           scatter: '散点图',
-          area: '面积图'
+          area: '面积图',
+          radar: '雷达图',
+          funnel: '漏斗图',
+          gauge: '仪表盘',
+          heatmap: '热力图'
         },
         form: {
           name: '请输入指标名称',
@@ -249,6 +256,53 @@ const biLocale = {
           metric: '指标',
           llm: 'LLM'
         }
+      },
+      chart: {
+        title: '图表库',
+        save: '保存',
+        saveAsChart: '保存为图表',
+        edit: '编辑',
+        delete: '删除',
+        deleteConfirm: '确认删除该图表？',
+        batchDeleteConfirm: '确认删除选中的 {count} 个图表？',
+        refresh: '刷新数据',
+        share: '分享',
+        enableShare: '开启分享',
+        disableShare: '关闭分享',
+        shareLink: '分享链接',
+        copyLink: '复制链接',
+        copySuccess: '已复制',
+        refreshSuccess: '刷新成功',
+        refreshFailed: '刷新失败',
+        datasourceUnavailable: '数据源不可用，显示历史快照',
+        saveSuccess: '保存成功',
+        saveFailed: '保存失败',
+        name: '标题',
+        description: '说明',
+        tags: '标签',
+        tagsHint: '多个标签用逗号分隔，如：销售,月报',
+        datasource: '数据源',
+        chartType: '图表类型',
+        xCol: 'X 轴',
+        yCol: 'Y 轴',
+        sqlText: '来源 SQL',
+        snapshotAt: '快照时间',
+        rowCount: '行数',
+        totalCharts: '共 {count} 个图表',
+        elapsedMs: '耗时',
+        truncated: '结果已截断（仅保留前 1000 行）',
+        empty: '暂无保存的图表',
+        emptyHint: '在智能对话或 SQL 工作台中将图表保存到此处',
+        viewDetail: '查看详情',
+        exportPng: '导出图片',
+        publicLabel: '已分享',
+        privateLabel: '未分享',
+        backToList: '返回列表',
+        sharedTitle: '分享图表',
+        sharedSubtitle: '由 AgenticBIAdmin 生成',
+        searchPlaceholder: '搜索图表名称',
+        filterByTag: '按标签筛选',
+        filterByDatasource: '按数据源筛选'
       }
     }
   }

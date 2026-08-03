@@ -32,6 +32,8 @@ class AgentState(TypedDict, total=False):
     tables: list[dict]  # 相关表元数据（供 sql_gen 用）
     sql_text: str  # 生成的 SQL
     validated_sql: str  # 校验后的 SQL（含 LIMIT / tenant 注入）
+    validate_error: str | None  # 最近一次校验失败原因（用于自纠错重试）
+    retry_count: int  # SQL 生成已重试次数（上限 MAX_SQL_RETRIES）
 
     # 输出
     sql_result: dict[str, Any]  # 执行结果（rows / columns / elapsed_ms / row_count）

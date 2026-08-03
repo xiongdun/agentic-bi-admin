@@ -116,10 +116,20 @@ async def _build_schema_text(tables: list[BiTable]) -> str:
 
 
 async def sql_gen_node(state: AgentState) -> dict[str, Any]:
-    """SQL 生成节点。"""
+    """SQL 生成节点。
+
+    支持**自纠错重试**：当 state 中存在 ``validate_error`` 时，把上次生成的
+    SQL 和校验错误信息加入 prompt，引导 LLM 修正。
+    """
     start = time.time()
     question = state.get("question", "")
     intent_type = state.get("intent_type", "query")
+
+    # 重试上下文
+    validate_error = state.get("validate_error")
+    previous_sql = state.get("sql_text", "")
+    retry_count = state.get("retry_count", 0)
+    is_retry = bool(validate_error) and retry_count > 0
 
     # 获取表元数据 + 数据源方言
     datasource_id = state.get("datasource_id")
@@ -148,6 +158,21 @@ async def sql_gen_node(state: AgentState) -> dict[str, Any]:
 
         provider = await BiLLMRouter.get_default_from_db()
 
+        # 重试时追加纠错提示
+        retry_hint = ""
+        if is_retry:
+            retry_hint = f"""
+
+⚠️ 上次生成的 SQL 校验失败，请根据以下反馈修正：
+
+上次 SQL:
+{previous_sql}
+
+校验错误:
+{validate_error}
+
+请仔细检查错误信息，修正后重新生成 SQL。"""
+
         prompt = f"""你是一个 SQL 专家。根据用户问题生成 {intent_type} 类型的 SQL。
 
 目标数据库方言: {db_type}
@@ -166,6 +191,7 @@ async def sql_gen_node(state: AgentState) -> dict[str, Any]:
 4. 必须使用与目标数据库方言兼容的函数和语法（参考上方方言注意事项）
 5. 适当添加 LIMIT
 6. 只返回 SQL 语句，不要解释
+{retry_hint}
 
 SQL:"""
 

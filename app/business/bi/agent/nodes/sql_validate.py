@@ -13,7 +13,12 @@ from app.business.bi.sandbox.whitelist import validate_sql
 
 
 async def sql_validate_node(state: AgentState) -> dict[str, Any]:
-    """SQL 校验节点。"""
+    """SQL 校验节点。
+
+    失败时不返回 ``error``（避免触发 runner 立即退出），改为返回
+    ``validate_error`` + 累加 ``retry_count``，由 runner 条件边决定回到
+    sql_gen 重试还是终止。
+    """
     start = time.time()
     sql_text = state.get("sql_text", "")
 
@@ -28,7 +33,8 @@ async def sql_validate_node(state: AgentState) -> dict[str, Any]:
         }
         return {
             "validated_sql": "",
-            "error": "SQL 为空",
+            "validate_error": "SQL 为空",
+            "retry_count": state.get("retry_count", 0) + 1,
             "steps": state.get("steps", []) + [step],
         }
 
@@ -65,20 +71,23 @@ async def sql_validate_node(state: AgentState) -> dict[str, Any]:
 
         return {
             "validated_sql": validated_sql,
+            "validate_error": None,  # 清除，通知 runner 校验通过
             "steps": state.get("steps", []) + [step],
         }
 
     except Exception as e:
         elapsed_ms = int((time.time() - start) * 1000)
+        error_msg = str(e)
         step = {
             "node": "sql_validate",
             "status": "failed",
             "data": {},
             "elapsed_ms": elapsed_ms,
-            "error": str(e),
+            "error": error_msg,
         }
         return {
             "validated_sql": "",
-            "error": str(e),
+            "validate_error": error_msg,
+            "retry_count": state.get("retry_count", 0) + 1,
             "steps": state.get("steps", []) + [step],
         }

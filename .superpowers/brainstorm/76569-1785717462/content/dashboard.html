@@ -1,0 +1,141 @@
+<h2>③ Dashboard 仪表盘 · 设计方案</h2>
+<p class="subtitle">把已保存的图表组装成可布局、可分享的数据看板</p>
+
+<div class="section">
+  <h3>核心问题</h3>
+  <p>当前用户只能一条一条问数据，无法把"销售趋势 + 区域分布 + TOP10 客户"放在一个页面上对比查看。企业 BI 的核心场景是"打开看板就知道全局状况"，没有 Dashboard 就只是取数工具，不是 BI 平台。</p>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">数据模型</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="background:#f3f4f6;padding:10px;border-radius:6px;font-family:monospace;margin-bottom:10px">
+        BiDashboard (新建)<br>
+        ├─ id, tenant_id, created_by<br>
+        ├─ name <span style="color:#6b7280">看板标题</span><br>
+        ├─ description <span style="color:#6b7280">看板说明</span><br>
+        ├─ layout_json <span style="color:#6b7280">布局配置</span><br>
+        ├─ filters_json <span style="color:#6b7280">全局筛选器</span><br>
+        ├─ refresh_mode <span style="color:#6b7280">manual/auto</span><br>
+        ├─ refresh_interval <span style="color:#6b7280">自动刷新秒数</span><br>
+        ├─ is_public, share_token<br>
+        └─ AuditMixin + SoftDeleteMixin
+      </div>
+      <div style="background:#fef3c7;padding:10px;border-radius:6px;font-family:monospace">
+        BiDashboardChart (新建，关联表)<br>
+        ├─ id, dashboard_id, chart_id<br>
+        ├─ position_x, position_y<br>
+        ├─ width, height <span style="color:#6b7280">栅格单位</span><br>
+        └─ override_config <span style="color:#6b7280">覆盖图表配置</span><br>
+        <span style="color:#6b7280;font-family:sans-serif">（同一图表可加入多个看板，位置独立）</span>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">页面结构</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:#dbeafe;padding:8px;border-radius:6px">
+          <strong>看板列表页 /bi/dashboards</strong><br>
+          卡片网格，显示名称/图表数/最后刷新时间<br>
+          <span style="color:#6b7280">支持搜索、按标签筛选、新建</span>
+        </div>
+        <div style="background:#ede9fe;padding:8px;border-radius:6px">
+          <strong>看板查看页 /bi/dashboards/{id}</strong><br>
+          栅格布局展示所有图表<br>
+          <span style="color:#6b7280">顶部全局筛选器（可选）</span><br>
+          <span style="color:#6b7280">右上角：刷新/编辑/分享/全屏</span>
+        </div>
+        <div style="background:#fef3c7;padding:8px;border-radius:6px">
+          <strong>看板编辑页 /bi/dashboards/{id}/edit</strong><br>
+          左侧：已保存图表列表（拖入）<br>
+          中间：栅格画布（拖拽/调整大小）<br>
+          <span style="color:#6b7280">右侧：选中图表的属性面板</span>
+        </div>
+        <div style="background:#dcfce7;padding:8px;border-radius:6px">
+          <strong>分享页 /bi/dashboard/share/{token}</strong><br>
+          只读看板，无需登录<br>
+          <span style="color:#6b7280">复用图表保存的 token 机制</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>布局方案对比</h3>
+  <div class="cards">
+    <div class="card" data-choice="grid" onclick="toggleSelect(this)">
+      <div class="card-image" style="padding:12px;background:#fafafa">
+        <svg viewBox="0 0 200 140" style="width:100%">
+          <rect x="10" y="10" width="85" height="55" fill="#dbeafe" stroke="#2563eb"/>
+          <rect x="105" y="10" width="85" height="55" fill="#dbeafe" stroke="#2563eb"/>
+          <rect x="10" y="75" width="180" height="55" fill="#dbeafe" stroke="#2563eb"/>
+          <text x="52" y="40" text-anchor="middle" font-size="10" fill="#1e40af">图表1</text>
+          <text x="147" y="40" text-anchor="middle" font-size="10" fill="#1e40af">图表2</text>
+          <text x="100" y="105" text-anchor="middle" font-size="10" fill="#1e40af">图表3（跨列）</text>
+        </svg>
+      </div>
+      <div class="card-body">
+        <h3>固定栅格（推荐）</h3>
+        <p>12 列栅格，图表占 N 列 M 行。用 vue-grid-layout 组件。简单稳定，满足绝大多数看板场景</p>
+      </div>
+    </div>
+    <div class="card" data-choice="free" onclick="toggleSelect(this)">
+      <div class="card-image" style="padding:12px;background:#fafafa">
+        <svg viewBox="0 0 200 140" style="width:100%">
+          <rect x="15" y="15" width="70" height="50" fill="#fef3c7" stroke="#d97706" transform="rotate(-2 50 40)"/>
+          <rect x="100" y="20" width="80" height="40" fill="#fef3c7" stroke="#d97706"/>
+          <rect x="30" y="80" width="120" height="50" fill="#fef3c7" stroke="#d97706" transform="rotate(1 90 105)"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <h3>自由画布</h3>
+        <p>绝对定位，任意位置/大小。灵活但复杂，图表易重叠，移动端适配难</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策（需你确认）</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>设计倾向</h4>
+      <ul>
+        <li><strong>布局引擎</strong>：用 <a href="https://jbaysolutions.github.io/vue-grid-layout/">vue-grid-layout</a>（Vue3 版），12 列栅格，支持拖拽 + 调整大小 + 响应式。项目已用 Naive UI，组件兼容性好</li>
+        <li><strong>图表数据刷新</strong>：打开看板时并行刷新所有图表（Promise.all），单个图表失败不影响其他。支持手动刷新 + 可选自动刷新（refresh_mode=auto, refresh_interval=300s）</li>
+        <li><strong>全局筛选器</strong>：filters_json 存键值对（如 {"date_range": "last_30d"}），刷新图表时把筛选值注入 SQL 的占位符。一期只支持日期范围，后续扩展</li>
+        <li><strong>权限</strong>：看板走 RBAC（B_BI_DASHBOARD_*），分享页走 token。看板内图表不单独鉴权（能看看板就能看里面的图表）</li>
+        <li><strong>与图表保存的关系</strong>：看板只引用 chart_id，不复制图表数据。图表被删除时看板显示"图表已删除"占位</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>风险/限制</h4>
+      <ul>
+        <li>多图表并行刷新可能压垮数据源 → 限制并发数（最多 5 个并行，其余排队）</li>
+        <li>vue-grid-layout 是新依赖 → 需评估包大小和兼容性</li>
+        <li>全局筛选器只支持日期范围（一期），复杂筛选后续迭代</li>
+        <li>看板分享页不展示敏感图表（chart.is_public=false 的不参与分享）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>方案 OK，继续看 ④ 定时报表</h3>
+      <p>认可布局方案（固定栅格）、数据模型、刷新机制、权限设计</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✗</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端告诉我哪里要改</p>
+    </div>
+  </div>
+</div>

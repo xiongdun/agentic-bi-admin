@@ -41,11 +41,14 @@ declare module "@elegant-router/types" {
     "alova_scenes": "/alova/scenes";
     "bi": "/bi";
     "bi_audit": "/bi/audit";
+    "bi_chart-detail": "/bi/chart-detail/:id";
+    "bi_charts": "/bi/charts";
     "bi_chat": "/bi/chat";
     "bi_metadata": "/bi/metadata";
     "bi_metadata-detail": "/bi/metadata-detail/:id";
     "bi_metrics": "/bi/metrics";
     "bi_models": "/bi/models";
+    "bi_share": "/bi/share/:token";
     "bi_sql-workbench": "/bi/sql-workbench";
     "function": "/function";
     "function_hide-child": "/function/hide-child";
@@ -209,11 +212,14 @@ declare module "@elegant-router/types" {
     | "alova_request"
     | "alova_scenes"
     | "bi_audit"
+    | "bi_chart-detail"
+    | "bi_charts"
     | "bi_chat"
     | "bi_metadata-detail"
     | "bi_metadata"
     | "bi_metrics"
     | "bi_models"
+    | "bi_share"
     | "bi_sql-workbench"
     | "function_hide-child_one"
     | "function_hide-child_three"

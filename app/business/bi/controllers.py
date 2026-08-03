@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.business.bi.models import (
     BiAuditLog,
+    BiChart,
     BiChatMessage,
     BiChatSession,
     BiColumn,
@@ -48,6 +49,9 @@ bi_audit_log_controller = CRUDBase(model=BiAuditLog)
 bi_masking_rule_controller = CRUDBase(model=BiMaskingRule)
 bi_quota_config_controller = CRUDBase(model=BiQuotaConfig)
 
+# ---- chart ----
+bi_chart_controller = CRUDBase(model=BiChart)
+
 
 # 兼容别名：与 HR 模块命名风格一致（PascalCase + Controller 后缀）
 BiDatasourceController = bi_datasource_controller
@@ -63,3 +67,4 @@ BiLLMModelController = bi_llm_model_controller
 BiAuditLogController = bi_audit_log_controller
 BiMaskingRuleController = bi_masking_rule_controller
 BiQuotaConfigController = bi_quota_config_controller
+BiChartController = bi_chart_controller

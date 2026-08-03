@@ -1,0 +1,92 @@
+<h2>① 图表保存 · 设计方案</h2>
+<p class="subtitle">把会话/工作台里的临时图表变成可复用资产</p>
+
+<div class="section">
+  <h3>核心问题</h3>
+  <p>当前图表只存在于 <code>BiChatMessage.sql_result</code> 里，会话结束就找不到了。用户没法把"上次问的那个销售趋势图"再次打开、分享给同事、或组装到仪表盘。</p>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">数据模型</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="background:#f3f4f6;padding:10px;border-radius:6px;font-family:monospace">
+        BiChart (新建)<br>
+        ├─ id, tenant_id, created_by (AuditMixin)<br>
+        ├─ name <span style="color:#6b7280">图表标题</span><br>
+        ├─ description <span style="color:#6b7280">图表说明</span><br>
+        ├─ datasource_id <span style="color:#6b7280">数据源</span><br>
+        ├─ chart_type <span style="color:#6b7280">bar/line/pie...</span><br>
+        ├─ x_col, y_col <span style="color:#6b7280">XY 字段</span><br>
+        ├─ sql_text <span style="color:#6b7280">来源 SQL</span><br>
+        ├─ sql_result_json <span style="color:#6b7280">结果快照 JSON</span><br>
+        ├─ tags <span style="color:#6b7280">标签（逗号分隔）</span><br>
+        ├─ is_public <span style="color:#6b7280">是否公开</span><br>
+        └─ share_token <span style="color:#6b7280">外部分享 token</span>
+      </div>
+      <p style="margin-top:8px;color:#6b7280">复用 <code>BiChatSqlResult</code> 结构存结果快照，刷新时按 sql_text 重跑</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">关键交互</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:#ede9fe;padding:8px;border-radius:6px">
+          <strong>① 保存入口</strong><br>
+          智能对话/SQL 工作台的图表右上角加"保存为图表"按钮
+        </div>
+        <div style="background:#dbeafe;padding:8px;border-radius:6px">
+          <strong>② 图表列表页</strong><br>
+          新增 /bi/charts 页面：卡片网格、搜索、按标签筛选
+        </div>
+        <div style="background:#fef3c7;padding:8px;border-radius:6px">
+          <strong>③ 刷新数据</strong><br>
+          打开图表 → 点"刷新" → 重跑 sql_text → 更新结果
+        </div>
+        <div style="background:#dcfce7;padding:8px;border-radius:6px">
+          <strong>④ 分享</strong><br>
+          生成 share_token → /bi/share/{token} 只读页（无需登录）
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策（需你确认）</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>设计倾向</h4>
+      <ul>
+        <li><strong>结果快照 vs 只存 SQL</strong>：倾向两者都存。SQL 用于刷新，快照用于离线查看（数据源不可用时不影响看图）</li>
+        <li><strong>分享 token</strong>：用 sqid 编码（项目已有），32 位长度，不可猜测</li>
+        <li><strong>权限</strong>：保存的图表走 RBAC（按钮码 B_BI_CHART_*），公开分享页走 token 校验</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>风险/限制</h4>
+      <ul>
+        <li>结果快照可能很大（万行数据）→ 限制保存时最多 1000 行</li>
+        <li>SQL 可能引用已删除的表 → 刷新失败时显示快照 + 警告</li>
+        <li>分享页暴露数据 → 默认 is_public=false，需用户主动开启</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>方案 OK，继续看 ② 异步大查询</h3>
+      <p>认可数据模型、交互流程、设计决策</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✗</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端告诉我哪里要改</p>
+    </div>
+  </div>
+</div>

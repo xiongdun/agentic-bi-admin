@@ -49,6 +49,7 @@ from app.business.bi.sandbox.executor import (
     execute_sql,
     test_connection,
 )
+from app.business.bi.sandbox.tenant import inject_tenant_filter, should_inject_tenant
 from app.business.bi.sandbox.whitelist import validate_sql
 from app.business.bi.schemas import (
     BiAuditLogSearch,
@@ -73,6 +74,7 @@ _BI_DS_ERR = 4001  # 数据源连接失败
 _BI_DS_NOT_FOUND = 4002  # 数据源不存在
 _BI_METRIC_ERR = 4101  # 指标执行失败
 _BI_SQL_ERR = 4104  # SQL 执行失败
+_BI_SESSION_ERR = 4150  # 会话操作失败（标题校验等）
 _BI_LLM_ERR = 4200  # LLM Provider 不可用
 _BI_AUDIT_ERR = 4300  # 审计日志导出失败
 
@@ -364,6 +366,8 @@ async def send_chat_message(user, schema: ChatSendSchema) -> AsyncGenerator[dict
         "data_scope": data_scope,
         "scope_id": scope_id,
         "datasource_id": datasource_id_int,
+        "validate_error": None,  # SQL 自纠错重试状态
+        "retry_count": 0,
     }
 
     # 写审计日志（发送对话）
@@ -388,7 +392,7 @@ async def send_chat_message(user, schema: ChatSendSchema) -> AsyncGenerator[dict
 
 
 async def run_sql(user, schema: SqlRunSchema) -> dict:
-    """执行 SQL（已通过白名单校验 + 自动 LIMIT）。
+    """执行 SQL（已通过白名单校验 + 自动 LIMIT + 行级注入）。
 
     Returns:
         SqlRunResult 兼容 dict
@@ -405,6 +409,11 @@ async def run_sql(user, schema: SqlRunSchema) -> dict:
     # 白名单校验 + 自动 LIMIT
     validation = validate_sql(schema.sql, dialect=dialect)
     safe_sql = validation.sql
+
+    # 行级 tenant 注入（与 NL2SQL 路径一致，spec 要求 SQL 工作台直连也走行级注入）
+    data_scope, scope_id = await _get_user_data_scope()
+    if should_inject_tenant(data_scope) and scope_id is not None:
+        safe_sql = inject_tenant_filter(safe_sql, scope_id, dialect=dialect)
 
     # 执行
     result: ExecutionResult = await execute_sql(safe_sql, ds, user_id=user_id)
@@ -799,6 +808,23 @@ async def delete_chat_session(session_id: int, user_id: int) -> int:
     await bi_chat_session_controller.remove(id=session_id)
 
     radar_log("删除对话会话", data={"session_id": session_id, "user_id": user_id})
+    return session_id
+
+
+async def update_chat_session(session_id: int, user_id: int, obj_in) -> int:
+    """更新会话标题。仅会话创建人可修改。"""
+    session = await bi_chat_session_controller.get_or_none(id=session_id, user_id=user_id)
+    if session is None:
+        raise BizError(_BI_DS_NOT_FOUND, f"会话不存在或无权访问: {session_id}")
+
+    title = (getattr(obj_in, "title", None) or "").strip()
+    if not title:
+        raise BizError(_BI_SESSION_ERR, "会话标题不能为空")
+    if len(title) > 200:
+        raise BizError(_BI_SESSION_ERR, "会话标题不能超过 200 字符")
+
+    await bi_chat_session_controller.update(id=session_id, obj_in={"title": title})
+    radar_log("更新对话会话标题", data={"session_id": session_id, "user_id": user_id})
     return session_id
 
 

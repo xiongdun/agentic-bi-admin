@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { NButton, NEmpty, NPopconfirm, NScrollbar, NTooltip } from 'naive-ui';
+import { nextTick, ref } from 'vue';
+import { NButton, NEmpty, NInput, NPopconfirm, NScrollbar, NTooltip } from 'naive-ui';
 import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
 
@@ -17,14 +18,43 @@ interface Emits {
   (e: 'select', id: string): void;
   (e: 'new'): void;
   (e: 'delete', id: string): void;
+  (e: 'rename', id: string, title: string): void;
   (e: 'toggle'): void;
 }
 
 const emit = defineEmits<Emits>();
 const { hasAuth } = useAuth();
 
+/** 当前正在编辑标题的会话 ID（空字符串表示非编辑态） */
+const editingId = ref<string>('');
+const editingTitle = ref('');
+const inputRef = ref<InstanceType<typeof NInput> | null>(null);
+
+function setInputRef(el: any) {
+  inputRef.value = el;
+}
+
 function select(id: string) {
   if (id !== props.currentSessionId) emit('select', id);
+}
+
+async function startEdit(s: Api.Bi.BiChatSession) {
+  if (!hasAuth('B_BI_CHAT_NEW')) return;
+  editingId.value = s.id;
+  editingTitle.value = s.title || '';
+  await nextTick();
+  inputRef.value?.focus();
+}
+
+function commitEdit() {
+  if (!editingId.value) return;
+  const title = editingTitle.value.trim();
+  if (title) emit('rename', editingId.value, title);
+  editingId.value = '';
+}
+
+function cancelEdit() {
+  editingId.value = '';
 }
 
 function formatTime(ts: number | null): string {
@@ -48,8 +78,8 @@ function formatTime(ts: number | null): string {
         </NButton>
         <NTooltip v-if="hasAuth('B_BI_CHAT_NEW')" placement="right" trigger="hover">
           <template #trigger>
-            <NButton size="small" type="primary" ghost circle @click="emit('new')">
-              <template #icon><icon-ic-round-plus /></template>
+            <NButton size="small" quaternary circle @click="emit('new')">
+              <template #icon><icon-lucide-plus class="text-icon" /></template>
             </NButton>
           </template>
           {{ $t('page.bi.chat.newSession') }}
@@ -64,8 +94,8 @@ function formatTime(ts: number | null): string {
         <div class="flex items-center gap-4px">
           <NTooltip v-if="hasAuth('B_BI_CHAT_NEW')" trigger="hover">
             <template #trigger>
-              <NButton size="small" type="primary" ghost circle @click="emit('new')">
-                <template #icon><icon-ic-round-plus class="text-icon" /></template>
+              <NButton size="small" quaternary circle @click="emit('new')">
+                <template #icon><icon-lucide-plus class="text-icon" /></template>
               </NButton>
             </template>
             {{ $t('page.bi.chat.newSession') }}
@@ -91,10 +121,29 @@ function formatTime(ts: number | null): string {
             @click="select(s.id)"
           >
             <div class="flex-1 overflow-hidden">
-              <div class="truncate text-14px font-500">{{ s.title || $t('page.bi.chat.newSession') }}</div>
-              <div class="truncate text-12px opacity-60 mt-2px">
-                {{ formatTime(s.lastMessageAt || s.createdAt) }}
-              </div>
+              <NInput
+                v-if="editingId === s.id"
+                :ref="setInputRef"
+                v-model:value="editingTitle"
+                size="small"
+                :placeholder="$t('page.bi.chat.newSession')"
+                @blur="commitEdit"
+                @keyup.enter="commitEdit"
+                @keyup.esc="cancelEdit"
+                @click.stop
+              />
+              <template v-else>
+                <div
+                  class="truncate text-14px font-500 select-none"
+                  :class="{ 'cursor-text': hasAuth('B_BI_CHAT_NEW') }"
+                  @dblclick.stop="startEdit(s)"
+                >
+                  {{ s.title || $t('page.bi.chat.newSession') }}
+                </div>
+                <div class="truncate text-12px opacity-60 mt-2px">
+                  {{ formatTime(s.lastMessageAt || s.createdAt) }}
+                </div>
+              </template>
             </div>
             <NPopconfirm v-if="hasAuth('B_BI_CHAT_DELETE')" @positive-click="emit('delete', s.id)">
               <template #trigger>

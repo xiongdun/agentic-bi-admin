@@ -33,6 +33,15 @@ export function fetchDeleteBiChatSession(data: Api.Bi.CommonDeleteParams) {
   });
 }
 
+/** 修改对话会话标题（仅会话创建人可修改） */
+export function fetchUpdateBiChatSession(id: string, data: Api.Bi.BiChatSessionUpdateParams) {
+  return request<Api.Bi.UpdateResult>({
+    url: `/business/bi/chat/sessions/${id}`,
+    method: 'patch',
+    data
+  });
+}
+
 /** 查看会话消息列表（按时间正序） */
 export function fetchBiChatMessages(sessionId: string, data?: Api.Bi.BiChatMessageSearchParams) {
   return request<Api.Bi.BiChatMessageList>({

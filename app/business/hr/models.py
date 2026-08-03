@@ -26,7 +26,7 @@ class Department(BaseModel, AuditMixin, TreeMixin, SoftDeleteMixin):
             ON biz_department(name) WHERE deleted_at IS NULL;
     """
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, unique=True, description="部门名称")
     code = fields.CharField(max_length=50, unique=True, description="部门编码")
     description = fields.CharField(max_length=500, null=True, blank=True, description="部门描述")
@@ -47,7 +47,7 @@ class Tag(BaseModel, AuditMixin):
     前端可通过 ``GET /api/v1/system-manage/dictionaries/tag_category/options`` 获取。
     """
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, unique=True, description="标签名称")
     category = fields.CharField(max_length=50, description="标签分类（引用字典 tag_category）")
     description = fields.CharField(max_length=500, null=True, blank=True, description="标签描述")
@@ -81,7 +81,7 @@ class Employee(BaseModel, AuditMixin, SoftDeleteMixin):
             ON biz_employee(employee_no) WHERE deleted_at IS NULL;
     """
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=50, description="员工姓名")
     employee_no = fields.CharField(max_length=20, unique=True, description="工号")
     email = fields.CharField(max_length=100, null=True, blank=True, description="邮箱")
@@ -107,7 +107,7 @@ class Employee(BaseModel, AuditMixin, SoftDeleteMixin):
 class EmployeeStatusLog(BaseModel, AuditMixin):
     """员工状态流转日志。"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     employee_id: int
     employee: fields.ForeignKeyRelation[Employee] = fields.ForeignKeyField("app_system.Employee", related_name="status_logs", on_delete=fields.CASCADE, description="员工")
     from_status = fields.CharEnumField(enum_type=EmployeeStatus, null=True, description="原状态")

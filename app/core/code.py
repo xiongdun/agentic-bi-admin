@@ -107,3 +107,7 @@ class Code:
     HR_USER_NOT_EMPLOYEE = "4005"  # 当前用户未关联员工信息
     HR_MANAGER_ONLY = "4006"  # 仅部门主管可执行此操作
     HR_INVALID_TRANSITION = "4007"  # 不允许的状态流转
+
+    # 42xx — BI 图表模块
+    BI_CHART_NOT_FOUND = "4200"  # 图表不存在
+    BI_DATASOURCE_UNAVAILABLE = "4201"  # 数据源不可用（刷新图表时）

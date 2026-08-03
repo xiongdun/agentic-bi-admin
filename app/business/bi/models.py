@@ -24,7 +24,7 @@ from app.utils import AuditMixin, BaseModel, SoftDeleteManager, SoftDeleteMixin,
 class BiDatasource(BaseModel, AuditMixin, SoftDeleteMixin):
     """数据源配置"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, description="数据源名称")
     db_type = fields.CharField(max_length=20, description="数据库类型（postgresql/mysql/clickhouse/trino/sqlite）")
     host = fields.CharField(max_length=200, description="主机地址")
@@ -45,7 +45,7 @@ class BiDatasource(BaseModel, AuditMixin, SoftDeleteMixin):
 class BiTable(BaseModel, AuditMixin):
     """表元数据"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     datasource_id: int
     datasource: fields.ForeignKeyRelation[BiDatasource] = fields.ForeignKeyField("app_system.BiDatasource", related_name="tables", on_delete=fields.CASCADE, description="所属数据源")
     name = fields.CharField(max_length=200, description="表名")
@@ -62,7 +62,7 @@ class BiTable(BaseModel, AuditMixin):
 class BiColumn(BaseModel, AuditMixin):
     """列元数据"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     table_id: int
     table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="columns", on_delete=fields.CASCADE, description="所属表")
     name = fields.CharField(max_length=200, description="列名")
@@ -80,7 +80,7 @@ class BiColumn(BaseModel, AuditMixin):
 class BiIndex(BaseModel, AuditMixin):
     """索引元数据"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     table_id: int
     table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="indexes", on_delete=fields.CASCADE, description="所属表")
     name = fields.CharField(max_length=200, description="索引名")
@@ -95,7 +95,7 @@ class BiIndex(BaseModel, AuditMixin):
 class BiForeignKey(BaseModel, AuditMixin):
     """外键关系元数据"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     table_id: int
     table: fields.ForeignKeyRelation[BiTable] = fields.ForeignKeyField("app_system.BiTable", related_name="foreign_keys", on_delete=fields.CASCADE, description="所属表")
     name = fields.CharField(max_length=200, description="外键名")
@@ -113,7 +113,7 @@ class BiForeignKey(BaseModel, AuditMixin):
 class BiMetric(BaseModel, AuditMixin):
     """指标定义"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, description="指标名称")
     code = fields.CharField(max_length=50, unique=True, description="指标编码")
     description = fields.TextField(null=True, blank=True, description="指标描述")
@@ -133,7 +133,7 @@ class BiMetric(BaseModel, AuditMixin):
 class BiChatSession(BaseModel, AuditMixin):
     """对话会话"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     title = fields.CharField(max_length=200, description="会话标题")
     user_id = fields.IntField(description="创建用户ID")
     last_message_at = fields.DatetimeField(null=True, description="最后消息时间")
@@ -146,7 +146,7 @@ class BiChatSession(BaseModel, AuditMixin):
 class BiChatMessage(BaseModel, AuditMixin):
     """对话消息"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     session_id: int
     session: fields.ForeignKeyRelation[BiChatSession] = fields.ForeignKeyField("app_system.BiChatSession", related_name="messages", on_delete=fields.CASCADE, description="所属会话")
     role = fields.CharField(max_length=20, description="角色（user/assistant/system）")
@@ -170,7 +170,7 @@ class BiChatMessage(BaseModel, AuditMixin):
 class BiLLMProvider(BaseModel, AuditMixin):
     """LLM Provider 配置"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, description="Provider 名称")
     provider_type = fields.CharField(max_length=20, description="Provider 类型（deepseek/ollama/qwen/openai/mock/custom）")
     api_key = fields.CharField(max_length=500, description="API Key（Fernet 加密存储）")
@@ -187,7 +187,7 @@ class BiLLMProvider(BaseModel, AuditMixin):
 class BiLLMModel(BaseModel, AuditMixin):
     """LLM 模型配置"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     provider_id: int
     provider: fields.ForeignKeyRelation[BiLLMProvider] = fields.ForeignKeyField("app_system.BiLLMProvider", related_name="models", on_delete=fields.CASCADE, description="所属 Provider")
     name = fields.CharField(max_length=100, description="模型名（如 deepseek-chat）")
@@ -210,7 +210,7 @@ class BiAuditLog(BaseModel, AuditMixin):
     不在此重复声明。
     """
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     trace_id = fields.CharField(max_length=100, null=True, blank=True, description="链路追踪 ID")
     event_type = fields.CharField(
         max_length=50,
@@ -237,7 +237,7 @@ class BiAuditLog(BaseModel, AuditMixin):
 class BiMaskingRule(BaseModel, AuditMixin):
     """列脱敏规则"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, description="规则名称")
     column_pattern = fields.CharField(max_length=200, description="列名匹配模式（支持正则）")
     mask_type = fields.CharField(max_length=20, description="脱敏类型（phone/idcard/email/bankcard/custom）")
@@ -253,7 +253,7 @@ class BiMaskingRule(BaseModel, AuditMixin):
 class BiQuotaConfig(BaseModel, AuditMixin):
     """配额配置"""
 
-    id = fields.IntField(primary_key=True)
+    id = fields.IntField(primary_key=True, description="主键ID")
     name = fields.CharField(max_length=100, description="配置名称")
     max_rows = fields.IntField(default=10000, description="最大行数")
     timeout_seconds = fields.IntField(default=30, description="超时秒数")
@@ -265,3 +265,42 @@ class BiQuotaConfig(BaseModel, AuditMixin):
 
     class Meta:
         table = "biz_bi_quota_config"
+
+
+# ==================== chart 子模块 ====================
+
+
+class BiChart(BaseModel, AuditMixin, SoftDeleteMixin):
+    """保存的图表（可来自对话或 SQL 工作台）。
+
+    把会话/工作台里的临时图表变成可复用资产：支持列表、刷新、分享。
+    ``result_snapshot`` 与 ``BiChatMessage.sql_result`` 结构一致，
+    刷新失败时前端可降级显示快照。
+    """
+
+    id = fields.IntField(primary_key=True, description="主键ID")
+    name = fields.CharField(max_length=100, description="图表标题")
+    description = fields.TextField(null=True, blank=True, description="图表说明")
+    datasource_id: int
+    datasource: fields.ForeignKeyRelation[BiDatasource] = fields.ForeignKeyField(
+        "app_system.BiDatasource",
+        related_name="charts",
+        on_delete=fields.CASCADE,
+        description="所属数据源",
+    )
+    chart_type = fields.CharField(max_length=20, description="图表类型：bar/line/pie/scatter/area/radar/funnel/gauge/heatmap")
+    x_col = fields.CharField(max_length=100, null=True, blank=True, description="X 轴字段名")
+    y_col = fields.CharField(max_length=100, null=True, blank=True, description="Y 轴字段名")
+    sql_text = fields.TextField(description="来源 SQL（用于刷新数据）")
+    # 结果快照：结构 {columns, rows, rowCount, elapsedMs, isTruncated}
+    # 保存时最多保留前 BI_CHART_SNAPSHOT_MAX_ROWS 行（默认 1000）
+    result_snapshot = fields.JSONField(description="结果快照（最多 1000 行）")
+    tags = fields.CharField(max_length=500, null=True, blank=True, description="标签（逗号分隔，如 销售,月报）")
+    is_public = fields.BooleanField(default=False, description="是否开启外部分享")
+    share_token = fields.CharField(max_length=32, null=True, blank=True, unique=True, description="外部分享 token（sqid 编码）")
+    snapshot_at = fields.DatetimeField(description="结果快照的生成时间")
+    tenant_id = fields.IntField(default=0, description="租户ID（行级 data_scope 作用域）")
+
+    class Meta:
+        table = "biz_bi_chart"
+        manager = SoftDeleteManager()

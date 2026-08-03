@@ -1,0 +1,139 @@
+<h2>④ 定时报表 · 设计方案</h2>
+<p class="subtitle">按计划自动跑查询/刷新看板，结果推送到邮件/飞书/钉钉</p>
+
+<div class="section">
+  <h3>核心问题</h3>
+  <p>当前用户必须手动打开看板/跑查询才能看数据。企业场景里"每周一早上发销售周报"、"每天 9 点推送昨日核心指标"是刚需。没有定时推送，BI 就只是"主动查"工具，覆盖不到"被动接收"场景。</p>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">执行流程</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="background:#dbeafe;padding:8px;border-radius:6px">
+          <strong>1. 定时触发</strong><br>
+          manifest 声明 PeriodicTask（每分钟检查）<br>
+          <span style="color:#6b7280">leader_only + Redis 锁，多 worker 去重</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#ede9fe;padding:8px;border-radius:6px">
+          <strong>2. 匹配订阅</strong><br>
+          查 BiSubscription（cron 表达式匹配当前时间）<br>
+          <span style="color:#6b7280">状态=active，next_run_at &lt;= now</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#fef3c7;padding:8px;border-radius:6px">
+          <strong>3. 执行查询/刷新看板</strong><br>
+          单图表：跑 sql_text → 渲染图表<br>
+          看板：并行刷新所有图表 → 拼接<br>
+          <span style="color:#6b7280">复用 ②异步大查询 的执行引擎</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#fde2e4;padding:8px;border-radius:6px">
+          <strong>4. 渲染产物</strong><br>
+          后端用 ECharts SSR（node-canvas 或 echarts-ssr）<br>
+          <span style="color:#6b7280">生成 PNG 附件 + 文本摘要</span><br>
+          <span style="color:#6b7280">失败时只发文本告警</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#dcfce7;padding:8px;border-radius:6px">
+          <strong>5. 推送渠道</strong><br>
+          邮件（SMTP）/ 飞书 webhook / 钉钉 webhook<br>
+          <span style="color:#6b7280">失败重试 3 次，指数退避</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#e0e7ff;padding:8px;border-radius:6px">
+          <strong>6. 记录投递结果</strong><br>
+          BiSubscriptionDelivery（投递日志）<br>
+          <span style="color:#6b7280">更新 next_run_at（按 cron 计算）</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">数据模型</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="background:#f3f4f6;padding:10px;border-radius:6px;font-family:monospace;margin-bottom:10px">
+        BiSubscription (新建)<br>
+        ├─ id, tenant_id, created_by<br>
+        ├─ name <span style="color:#6b7280">订阅名称</span><br>
+        ├─ target_type <span style="color:#6b7280">chart/dashboard</span><br>
+        ├─ target_id <span style="color:#6b7280">图表或看板 ID</span><br>
+        ├─ cron_expr <span style="color:#6b7280">cron 表达式</span><br>
+        ├─ channels_json <span style="color:#6b7280">推送渠道列表</span><br>
+        │&nbsp;&nbsp;<span style="color:#6b7280">[{type:email,to:[...]},</span><br>
+        │&nbsp;&nbsp;<span style="color:#6b7280">&nbsp;{type:feishu,webhook:...},</span><br>
+        │&nbsp;&nbsp;<span style="color:#6b7280">&nbsp;{type:dingtalk,webhook:...}]</span><br>
+        ├─ filters_json <span style="color:#6b7280">筛选器（同看板）</span><br>
+        ├─ status <span style="color:#6b7280">active/paused</span><br>
+        ├─ next_run_at <span style="color:#6b7280">下次执行时间</span><br>
+        └─ AuditMixin + SoftDeleteMixin
+      </div>
+      <div style="background:#fef3c7;padding:10px;border-radius:6px;font-family:monospace">
+        BiSubscriptionDelivery (新建，投递日志)<br>
+        ├─ id, subscription_id<br>
+        ├─ status <span style="color:#6b7280">success/failed</span><br>
+        ├─ error_msg<br>
+        ├─ row_count, elapsed_ms<br>
+        ├─ attachment_path <span style="color:#6b7280">PNG 路径</span><br>
+        └─ delivered_at
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策（需你确认）</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>设计倾向</h4>
+      <ul>
+        <li><strong>调度引擎</strong>：复用 manifest 的 <code>PeriodicTask</code>（项目已有，每分钟触发 + leader_only）。不引入 Celery beat，保持架构一致</li>
+        <li><strong>cron 表达式</strong>：标准 5 段式（分 时 日 月 周），前端用 <a href="https://github.com/AT-UI/at-ui-cron">cron-editor</a> 可视化编辑器，避免用户手写</li>
+        <li><strong>图表渲染</strong>：后端 SSR 用 <code>playwright</code> headless 截图（复用项目已有的 ECharts 配置，保证与前端一致）。比 node-canvas + echarts-ssr 方案更准但更重，一期可先用"只发文本摘要 + CSV 附件"，PNG 截图作为二期</li>
+        <li><strong>推送渠道（一期）</strong>：邮件（SMTP，aiosmtplib）+ 飞书 webhook（httpx）。钉钉/企微二期</li>
+        <li><strong>失败处理</strong>：投递失败重试 3 次（指数退避 1/2/4 分钟），全失败后标记 failed 并通知订阅创建者</li>
+        <li><strong>时区</strong>：cron 按租户时区执行（tenant.timezone，默认 Asia/Shanghai），避免跨国企业时差问题</li>
+        <li><strong>与异步大查询的关系</strong>：定时任务触发时调 ② 的执行引擎，结果不落 BiQueryTask（直接走推送流程），但记录到 BiSubscriptionDelivery</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>风险/限制</h4>
+      <ul>
+        <li>playwright 截图较重（启动浏览器实例）→ 限制并发数（最多 2 个），超限排队</li>
+        <li>邮件/飞书 webhook 凭证需加密存储 → 复用 BI_CRYPTO_KEY（Fernet）</li>
+        <li>cron 编辑器是新前端依赖 → 评估包大小</li>
+        <li>时区配置依赖租户模型有 timezone 字段 → 当前无，需先加</li>
+        <li>大结果推送：邮件附件限制 25MB，超限改为"下载链接"（7 天有效）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>一期范围建议（降低风险）</h3>
+  <div style="background:#f0fdf4;padding:12px;border-radius:8px;border-left:4px solid #16a34a">
+    <p style="margin:0;font-size:13px;line-height:1.8">
+      <strong>一期做</strong>：订阅 CRUD + cron 调度 + 邮件推送（文本摘要 + CSV 附件）+ 飞书 webhook（文本卡片）+ 投递日志<br>
+      <strong>二期做</strong>：PNG 截图推送（playwright SSR）+ 钉钉/企微 + 全局筛选器 + 失败告警通知创建者
+    </p>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>方案 OK，4 个功能设计方案全部确认</h3>
+      <p>认可后我开始写批次 A（图表保存）的详细 spec 文档</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✗</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端告诉我哪里要改</p>
+    </div>
+  </div>
+</div>

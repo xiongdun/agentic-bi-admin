@@ -504,3 +504,65 @@ class SqlRunResult(SchemaBase):
     rows: list[dict] = Field(default_factory=list, title="数据行")
     row_count: int = Field(0, title="返回行数")
     elapsed_ms: int = Field(0, title="耗时毫秒")
+
+
+# ============================================================
+# chart：BiChart（保存的图表）
+# ============================================================
+
+
+class BiChartCreateSchema(SchemaBase):
+    """保存图表请求。"""
+
+    name: str = Field(max_length=100, title="图表标题")
+    description: str | None = Field(None, title="图表说明")
+    datasource_id: str = Field(title="数据源 ID（sqid）")
+    chart_type: str = Field(max_length=20, title="图表类型")
+    x_col: str | None = Field(None, title="X 轴字段")
+    y_col: str | None = Field(None, title="Y 轴字段")
+    sql_text: str = Field(title="来源 SQL")
+    result_snapshot: dict = Field(title="结果快照（columns/rows/rowCount/elapsedMs）")
+    tags: str | None = Field(None, title="标签（逗号分隔）")
+    snapshot_at: datetime = Field(title="快照生成时间")
+
+
+BiChartUpdateSchema = make_optional(BiChartCreateSchema, "BiChartUpdateSchema")
+
+
+class BiChartSearchSchema(PageQueryBase):
+    """图表分页查询。"""
+
+    name: str | None = Field(None, title="按名称模糊搜索")
+    tags: str | None = Field(None, title="按标签筛选（精确匹配某一个标签）")
+    datasource_id: str | None = Field(None, title="按数据源筛选（sqid）")
+
+
+class BiChartOutSchema(SchemaBase):
+    """图表响应（不含敏感字段）。"""
+
+    id: str | None = Field(None, title="图表 ID（sqid）")
+    name: str | None = Field(None, title="图表标题")
+    description: str | None = Field(None, title="图表说明")
+    datasource_id: str | None = Field(None, title="数据源 ID（sqid）")
+    chart_type: str | None = Field(None, title="图表类型")
+    x_col: str | None = Field(None, title="X 轴字段")
+    y_col: str | None = Field(None, title="Y 轴字段")
+    sql_text: str | None = Field(None, title="来源 SQL")
+    result_snapshot: dict | None = Field(None, title="结果快照")
+    tags: str | None = Field(None, title="标签")
+    is_public: bool | None = Field(None, title="是否开启分享")
+    share_token: str | None = Field(None, title="分享 token")
+    snapshot_at: datetime | None = Field(None, title="快照生成时间")
+    created_at: datetime | None = Field(None, title="创建时间")
+    updated_at: datetime | None = Field(None, title="更新时间")
+
+
+class BiChartSharedOutSchema(SchemaBase):
+    """分享页响应（不返回 sql_text，避免泄露 SQL）。"""
+
+    name: str = Field(title="图表标题")
+    chart_type: str = Field(title="图表类型")
+    x_col: str | None = Field(None, title="X 轴字段")
+    y_col: str | None = Field(None, title="Y 轴字段")
+    result_snapshot: dict = Field(title="结果快照")
+    snapshot_at: datetime = Field(title="快照生成时间")

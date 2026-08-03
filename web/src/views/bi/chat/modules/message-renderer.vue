@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { defineComponent, h, nextTick, reactive, ref, watch, type PropType } from 'vue';
-import { NButton, NCode, NDataTable, NEmpty, NSelect, NSpin, NTabPane, NTabs, NTag, NTooltip } from 'naive-ui';
+import { computed, defineComponent, h, nextTick, reactive, ref, watch, type PropType } from 'vue';
+import { NButton, NCode, NDataTable, NEmpty, NSelect, NSpace, NSpin, NTabPane, NTabs, NTag, NTooltip } from 'naive-ui';
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { useEcharts, type ECOption } from '@/hooks/common/echarts';
+import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
+import {
+  autoDetectXY,
+  buildChartOption as buildSharedChartOption,
+  chartTypeOptions as sharedChartTypeOptions,
+  getNumericColumns,
+  type ChartType
+} from '../../shared/chart-config';
+import SaveChartModal from '../../shared/save-chart-modal.vue';
 
 defineOptions({ name: 'BiChatMessageRenderer' });
+
+const { hasAuth } = useAuth();
+const canSaveChart = computed(() => hasAuth('B_BI_CHART_CREATE'));
 
 // ---- Markdown 渲染（LLM 返回的解读文本）----
 const marked = new Marked({
@@ -26,6 +38,8 @@ interface Props {
   messages: ChatMessage[];
   streaming: boolean;
   hasSession: boolean;
+  /** 当前会话使用的数据源 ID（sqid），用于保存图表 */
+  datasourceId?: string | null;
 }
 
 const props = defineProps<Props>();
@@ -83,26 +97,55 @@ watch(
   }
 );
 
-// ---- 图表类型选择（每条消息独立）----
-const chartTypeMap = reactive<Record<string, string>>({});
+// ---- 图表类型选择 + X/Y 字段选择（每条消息独立）----
+const chartTypeMap = reactive<Record<string, ChartType>>({});
+const chartXAxisMap = reactive<Record<string, string>>({});
+const chartYAxisMap = reactive<Record<string, string>>({});
 const chartRefs = new Map<string, any>();
 
-const chartTypeOptions = [
-  { label: $t('page.bi.metrics.chartTypes.bar'), value: 'bar' },
-  { label: $t('page.bi.metrics.chartTypes.line'), value: 'line' },
-  { label: $t('page.bi.metrics.chartTypes.pie'), value: 'pie' }
-];
+// 图表类型选项复用共享配置（9 种）
+const chartTypeOptions = sharedChartTypeOptions;
 
-function getChartTabType(msg: ChatMessage): string {
+function getChartTabType(msg: ChatMessage): ChartType {
   const override = chartTypeMap[msg.id];
-  if (override && override !== 'table') return override;
-  const t = msg.chartType;
-  if (t === 'bar' || t === 'line' || t === 'pie') return t;
+  if (override) return override;
+  const t = msg.chartType as string | undefined;
+  // 后端推荐的 chartType 可能是 'table'（无图表），不在 ChartType 联合内，回退到 'bar'
+  if (t && t !== 'table') return t as ChartType;
   return 'bar';
 }
 
-function setChartType(msg: ChatMessage, type: string) {
+function setChartType(msg: ChatMessage, type: ChartType) {
   chartTypeMap[msg.id] = type;
+}
+
+function getColumnOptions(msg: ChatMessage) {
+  if (!msg.sqlResult?.columns) return [];
+  return msg.sqlResult.columns.map(col => ({ label: col, value: col }));
+}
+
+function getChartXAxis(msg: ChatMessage): string {
+  if (!chartXAxisMap[msg.id] && msg.sqlResult) {
+    const { xCol } = autoDetectXY(msg.sqlResult);
+    chartXAxisMap[msg.id] = xCol;
+  }
+  return chartXAxisMap[msg.id] || '';
+}
+
+function getChartYAxis(msg: ChatMessage): string {
+  if (!chartYAxisMap[msg.id] && msg.sqlResult) {
+    const { yCol } = autoDetectXY(msg.sqlResult);
+    chartYAxisMap[msg.id] = yCol;
+  }
+  return chartYAxisMap[msg.id] || '';
+}
+
+function setChartXAxis(msg: ChatMessage, col: string) {
+  chartXAxisMap[msg.id] = col;
+}
+
+function setChartYAxis(msg: ChatMessage, col: string) {
+  chartYAxisMap[msg.id] = col;
 }
 
 function setChartRef(id: string, el: any) {
@@ -110,62 +153,14 @@ function setChartRef(id: string, el: any) {
   else chartRefs.delete(id);
 }
 
-// ---- 图表 option 构建 ----
-function isNumeric(v: any): boolean {
-  if (typeof v === 'number') return !Number.isNaN(v);
-  if (typeof v === 'string' && v !== '') return !Number.isNaN(Number(v));
-  return false;
-}
-
+// ---- 图表 option 构建（复用共享 buildChartOption）----
 function hasNumericData(result: Api.Bi.ChatSqlResult): boolean {
-  const cols = result.columns || [];
-  const rows = result.rows || [];
-  return cols.slice(1).some(c => rows.some(r => isNumeric(r[c])));
-}
-
-function buildChartOption(result: Api.Bi.ChatSqlResult, chartType: string): ECOption {
-  const cols = result.columns || [];
-  const rows = result.rows || [];
-  if (!cols.length || !rows.length) return {} as ECOption;
-
-  if (chartType === 'pie') {
-    const nameCol = cols[0];
-    const valueCol = cols.slice(1).find(c => rows.some(r => isNumeric(r[c]))) || cols[1];
-    if (!valueCol) return {} as ECOption;
-    return {
-      tooltip: { trigger: 'item' },
-      legend: { orient: 'vertical', left: 'left' },
-      series: [
-        {
-          type: 'pie',
-          radius: '60%',
-          data: rows.map(r => ({ name: String(r[nameCol] ?? ''), value: Number(r[valueCol]) || 0 }))
-        }
-      ]
-    } as ECOption;
-  }
-
-  // bar / line
-  const xCol = cols[0];
-  const yCols = cols.slice(1).filter(c => rows.some(r => isNumeric(r[c])));
-  if (!yCols.length) return {} as ECOption;
-  return {
-    tooltip: { trigger: 'axis' },
-    legend: { data: yCols, top: 0 },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true, top: '15%' },
-    xAxis: { type: 'category', data: rows.map(r => String(r[xCol] ?? '')) },
-    yAxis: { type: 'value' },
-    series: yCols.map(c => ({
-      name: c,
-      type: chartType as 'bar' | 'line',
-      data: rows.map(r => Number(r[c]) || 0)
-    }))
-  } as ECOption;
+  return getNumericColumns(result).length > 0;
 }
 
 function getChartOption(msg: ChatMessage): ECOption {
   if (!msg.sqlResult) return {} as ECOption;
-  return buildChartOption(msg.sqlResult, getChartTabType(msg));
+  return buildSharedChartOption(msg.sqlResult, getChartTabType(msg), getChartXAxis(msg), getChartYAxis(msg));
 }
 
 // ---- 表格列构建 ----
@@ -269,6 +264,38 @@ function exportPng(msg: ChatMessage) {
     return;
   }
   inst.savePng?.(`bi-chart-${msg.id}.png`);
+}
+
+// ---- 保存图表 ----
+const saveChartVisible = ref<boolean>(false);
+const saveChartContext = ref<InstanceType<typeof SaveChartModal>['$props']['chartData']>(null);
+const saveChartDefaultName = ref<string>('');
+
+function openSaveChart(msg: ChatMessage) {
+  if (!msg.sqlResult?.rows?.length || !msg.sqlText) {
+    window.$message?.warning($t('page.bi.chart.empty'));
+    return;
+  }
+  if (!props.datasourceId) {
+    window.$message?.warning($t('page.bi.chat.selectDatasource'));
+    return;
+  }
+  saveChartContext.value = {
+    datasourceId: props.datasourceId,
+    chartType: getChartTabType(msg),
+    xCol: getChartXAxis(msg),
+    yCol: getChartYAxis(msg),
+    sqlText: msg.sqlText,
+    resultSnapshot: {
+      columns: msg.sqlResult.columns,
+      rows: msg.sqlResult.rows,
+      rowCount: msg.sqlResult.rowCount,
+      elapsedMs: msg.sqlResult.elapsedMs
+    },
+    snapshotAt: new Date().toISOString()
+  };
+  saveChartDefaultName.value = msg.content ? msg.content.slice(0, 50) : `图表 ${msg.id}`;
+  saveChartVisible.value = true;
 }
 
 async function copySql(sql: string) {
@@ -382,19 +409,45 @@ async function copySql(sql: string) {
                     :row-key="rowKey"
                   />
                 </NTabPane>
-                <NTabPane name="chart" tab="图表">
+                <NTabPane name="chart" :tab="$t('page.bi.metrics.chartType')">
                   <div class="flex items-center justify-between mb-8px">
-                    <NSelect
-                      :value="getChartTabType(msg)"
-                      :options="chartTypeOptions"
-                      size="small"
-                      class="w-160px"
-                      @update:value="(v: string) => setChartType(msg, v)"
-                    />
-                    <NButton size="tiny" ghost @click="exportPng(msg)">
-                      <template #icon><icon-ic-round-download class="text-icon" /></template>
-                      {{ $t('page.bi.chat.exportPng') }}
-                    </NButton>
+                    <NSpace :size="8" align="center" :wrap="false">
+                      <NSelect
+                        :value="getChartTabType(msg)"
+                        :options="chartTypeOptions"
+                        size="small"
+                        class="w-140px"
+                        @update:value="(v: ChartType) => setChartType(msg, v)"
+                      />
+                      <span class="text-12px text-gray-500 whitespace-nowrap">X:</span>
+                      <NSelect
+                        :value="getChartXAxis(msg)"
+                        :options="getColumnOptions(msg)"
+                        size="small"
+                        class="w-140px"
+                        filterable
+                        @update:value="(v: string) => setChartXAxis(msg, v)"
+                      />
+                      <span class="text-12px text-gray-500 whitespace-nowrap">Y:</span>
+                      <NSelect
+                        :value="getChartYAxis(msg)"
+                        :options="getColumnOptions(msg)"
+                        size="small"
+                        class="w-140px"
+                        filterable
+                        @update:value="(v: string) => setChartYAxis(msg, v)"
+                      />
+                    </NSpace>
+                    <NSpace :size="4" :wrap="false">
+                      <NButton v-if="canSaveChart" size="tiny" type="primary" ghost @click="openSaveChart(msg)">
+                        <template #icon><icon-ic-round-save class="text-icon" /></template>
+                        {{ $t('page.bi.chart.save') }}
+                      </NButton>
+                      <NButton size="tiny" ghost @click="exportPng(msg)">
+                        <template #icon><icon-ic-round-download class="text-icon" /></template>
+                        {{ $t('page.bi.chat.exportPng') }}
+                      </NButton>
+                    </NSpace>
                   </div>
                   <MessageChart
                     v-if="hasNumericData(msg.sqlResult)"
@@ -416,6 +469,13 @@ async function copySql(sql: string) {
         </div>
       </template>
     </div>
+
+    <!-- 保存图表弹窗 -->
+    <SaveChartModal
+      v-model:visible="saveChartVisible"
+      :chart-data="saveChartContext"
+      :default-name="saveChartDefaultName"
+    />
   </div>
 </template>
 

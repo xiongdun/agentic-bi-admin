@@ -103,6 +103,24 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'bi_chart-detail',
+        path: '/bi/chart-detail/:id',
+        component: 'view.bi_chart-detail',
+        meta: {
+          title: 'bi_chart-detail',
+          i18nKey: 'route.bi_chart-detail'
+        }
+      },
+      {
+        name: 'bi_charts',
+        path: '/bi/charts',
+        component: 'view.bi_charts',
+        meta: {
+          title: 'bi_charts',
+          i18nKey: 'route.bi_charts'
+        }
+      },
+      {
         name: 'bi_chat',
         path: '/bi/chat',
         component: 'view.bi_chat',
@@ -148,6 +166,16 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'bi_models',
           i18nKey: 'route.bi_models'
+        }
+      },
+      {
+        name: 'bi_share',
+        path: '/bi/share/:token',
+        component: 'view.bi_share',
+        meta: {
+          title: 'bi_share',
+          i18nKey: 'route.bi_share',
+          constant: true
         }
       },
       {

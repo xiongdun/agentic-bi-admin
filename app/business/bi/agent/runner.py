@@ -1,7 +1,11 @@
 """Agent 流水线编排 — LangGraph StateGraph DAG。
 
-固定 5 节点 DAG：intent → sql_gen → sql_validate → executor → explain → END
-条件边：executor 成功 → explain；失败 → END
+5 节点 DAG（含 SQL 自纠错循环）：
+    intent → sql_gen → sql_validate → executor → explain → END
+                       ↑      ↓ (校验失败 + retry_count < MAX)
+                       └──────┘
+    sql_validate 超过 MAX_SQL_RETRIES → END（yield error）
+    executor 失败 → END
 
 项目历史教训：
 1. SSE error paths must still persist assistant messages（_persist_error_message）。
@@ -14,6 +18,9 @@ import time
 from typing import Any, AsyncGenerator, cast
 
 from app.business.bi.agent.state import AgentState
+
+# SQL 生成最大重试次数（1 次初始 + MAX_SQL_RETRIES 次重试 = 最多 3 次生成）
+MAX_SQL_RETRIES = 2
 
 
 async def _persist_error_message(session_id: int, error: str, user_msg_id: int) -> None:
@@ -110,7 +117,18 @@ async def run_chat_turn(state: AgentState) -> AsyncGenerator[dict, None]:
         workflow.set_entry_point("intent")
         workflow.add_edge("intent", "sql_gen")
         workflow.add_edge("sql_gen", "sql_validate")
-        workflow.add_edge("sql_validate", "executor")
+
+        # 条件边：sql_validate 成功 → executor；失败 → sql_gen（重试）或 END（超限）
+        def _after_validate(state: AgentState) -> str:
+            validate_error = state.get("validate_error")
+            if validate_error:
+                retry_count = state.get("retry_count", 0)
+                if retry_count <= MAX_SQL_RETRIES:
+                    return "sql_gen"  # 回到 sql_gen 重试
+                return END  # 超限终止（runner 的 astream 循环会先拦截并 yield error）
+            return "executor"
+
+        workflow.add_conditional_edges("sql_validate", _after_validate)
 
         # 条件边：executor 成功 → explain；失败 → END
         def _after_executor(state: AgentState) -> str:
@@ -150,7 +168,7 @@ async def run_chat_turn(state: AgentState) -> AsyncGenerator[dict, None]:
                 for k, v in node_output.items():
                     current_state[k] = v
 
-                # 检查是否有错误
+                # 检查是否有错误（sql_gen / executor 等节点级失败，直接终止）
                 if node_output.get("error"):
                     error_msg = node_output["error"]
                     # 项目历史教训：持久化错误消息
@@ -161,6 +179,21 @@ async def run_chat_turn(state: AgentState) -> AsyncGenerator[dict, None]:
                         "error": error_msg,
                     }
                     return
+
+                # 检查 SQL 校验失败是否超限（自纠错重试上限）
+                validate_error = node_output.get("validate_error")
+                if validate_error:
+                    retry_count = current_state.get("retry_count", 0)
+                    if retry_count > MAX_SQL_RETRIES:
+                        error_msg = f"SQL 校验失败（已重试 {MAX_SQL_RETRIES} 次）: {validate_error}"
+                        await _persist_error_message(session_id, error_msg, user_msg_id)
+                        yield {
+                            "type": "error",
+                            "node": node_name,
+                            "error": error_msg,
+                        }
+                        return
+                    # 未超限：不 yield error，让条件边回到 sql_gen 重试
 
         # 流程成功完成
         elapsed_ms = int((time.time() - start) * 1000)

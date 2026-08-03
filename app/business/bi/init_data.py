@@ -102,6 +102,32 @@ BI_MENU_CHILDREN = [
             {"button_code": "B_BI_AUDIT_EXPORT", "button_desc": "导出审计日志"},
         ],
     },
+    {
+        "menu_name": "图表库",
+        "route_name": "bi_charts",
+        "route_path": "/bi/charts",
+        "component": "view.bi_charts",
+        "icon": "mdi:chart-box-outline",
+        "order": 7,
+        "buttons": [
+            {"button_code": "B_BI_CHART_VIEW", "button_desc": "查看图表"},
+            {"button_code": "B_BI_CHART_CREATE", "button_desc": "保存图表"},
+            {"button_code": "B_BI_CHART_EDIT", "button_desc": "编辑图表"},
+            {"button_code": "B_BI_CHART_DELETE", "button_desc": "删除图表"},
+            {"button_code": "B_BI_CHART_REFRESH", "button_desc": "刷新图表数据"},
+            {"button_code": "B_BI_CHART_SHARE", "button_desc": "外部分享"},
+        ],
+    },
+    {
+        "menu_name": "图表详情",
+        "route_name": "bi_chart-detail",
+        "route_path": "/bi/chart-detail/:id",
+        "component": "view.bi_chart-detail",
+        "icon": "mdi:chart-line",
+        "order": 99,
+        "hide_in_menu": True,
+        "active_menu": "bi_charts",
+    },
 ]
 
 # BI 全量按钮码聚合，便于角色授权引用。
@@ -126,6 +152,12 @@ BI_ALL_BUTTONS = [
     "B_BI_MODEL_PROVIDER_TEST",
     "B_BI_AUDIT_VIEW",
     "B_BI_AUDIT_EXPORT",
+    "B_BI_CHART_VIEW",
+    "B_BI_CHART_CREATE",
+    "B_BI_CHART_EDIT",
+    "B_BI_CHART_DELETE",
+    "B_BI_CHART_REFRESH",
+    "B_BI_CHART_SHARE",
 ]
 
 # BI 全量菜单 route_name（含顶级与子菜单）。
@@ -139,6 +171,8 @@ BI_ALL_MENUS = [
     "bi_metrics",
     "bi_models",
     "bi_audit",
+    "bi_charts",
+    "bi_chart-detail",
 ]
 
 # 数据分析师可见菜单与按钮码子集。
@@ -148,12 +182,20 @@ BI_ANALYST_MENUS = [
     "bi_chat",
     "bi_sql-workbench",
     "bi_metrics",
+    "bi_charts",
+    "bi_chart-detail",
 ]
 BI_ANALYST_BUTTONS = [
     "B_BI_CHAT_NEW",
     "B_BI_CHAT_DELETE",
     "B_BI_SQL_RUN",
     "B_BI_METRIC_VIEW",
+    "B_BI_CHART_VIEW",
+    "B_BI_CHART_CREATE",
+    "B_BI_CHART_EDIT",
+    "B_BI_CHART_DELETE",
+    "B_BI_CHART_REFRESH",
+    "B_BI_CHART_SHARE",
 ]
 
 # apis 字段：BI API 路由的 route_key（``APIRoute.name``）列表。
@@ -217,6 +259,18 @@ BI_ADMIN_APIS: list[str] = [
     "bi.audit.get",
     "bi.audit.stats",
     "bi.audit.export",
+    # chart（CRUD + refresh + share + 免登录查看）
+    "bi.charts.create",
+    "bi.charts.list",
+    "bi.charts.tags",
+    "bi.charts.get",
+    "bi.charts.update",
+    "bi.charts.delete",
+    "bi.charts.batch_delete",
+    "bi.charts.refresh",
+    "bi.charts.share_enable",
+    "bi.charts.share_disable",
+    "bi.charts.shared",
 ]
 
 # 数据分析师：仅对话 / SQL 工作台 / 指标查看相关路由
@@ -244,6 +298,18 @@ BI_ANALYST_APIS: list[str] = [
     "bi.tables.detail",
     "bi.columns.list",
     "bi.columns.get",
+    # chart（CRUD + refresh + share + 免登录查看 — 数据分析师可保存/管理自己的图表）
+    "bi.charts.create",
+    "bi.charts.list",
+    "bi.charts.tags",
+    "bi.charts.get",
+    "bi.charts.update",
+    "bi.charts.delete",
+    "bi.charts.batch_delete",
+    "bi.charts.refresh",
+    "bi.charts.share_enable",
+    "bi.charts.share_disable",
+    "bi.charts.shared",
 ]
 
 BI_ROLE_SEEDS = [

@@ -1,0 +1,85 @@
+<h2>差异化第一梯队 · 依赖关系与交付顺序</h2>
+<p class="subtitle">4 个功能的依赖链与建议分批策略</p>
+
+<div class="mockup">
+  <div class="mockup-header">功能依赖图</div>
+  <div class="mockup-body" style="padding:24px;background:#fafafa">
+    <svg viewBox="0 0 800 420" style="width:100%;max-width:800px;margin:0 auto;display:block">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#6b7280"/>
+        </marker>
+      </defs>
+
+      <!-- Batch 1: 图表保存 -->
+      <rect x="40" y="40" width="200" height="90" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="140" y="70" text-anchor="middle" font-size="15" font-weight="600" fill="#5b21b6">① 图表保存</text>
+      <text x="140" y="92" text-anchor="middle" font-size="11" fill="#6b7280">BiChart 模型</text>
+      <text x="140" y="108" text-anchor="middle" font-size="11" fill="#6b7280">从对话/工作台保存</text>
+      <text x="140" y="122" text-anchor="middle" font-size="11" fill="#6b7280">站内分享 + 外部链接</text>
+
+      <!-- Batch 2: 异步大查询 -->
+      <rect x="40" y="180" width="200" height="90" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+      <text x="140" y="210" text-anchor="middle" font-size="15" font-weight="600" fill="#1e40af">② 异步大查询</text>
+      <text x="140" y="232" text-anchor="middle" font-size="11" fill="#6b7280">bgtask 任务队列</text>
+      <text x="140" y="248" text-anchor="middle" font-size="11" fill="#6b7280">task_id 轮询/SSE</text>
+      <text x="140" y="262" text-anchor="middle" font-size="11" fill="#6b7280">结果落库 + 过期清理</text>
+
+      <!-- Batch 3: Dashboard -->
+      <rect x="320" y="110" width="200" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+      <text x="420" y="140" text-anchor="middle" font-size="15" font-weight="600" fill="#92400e">③ Dashboard</text>
+      <text x="420" y="162" text-anchor="middle" font-size="11" fill="#6b7280">BiDashboard 模型</text>
+      <text x="420" y="178" text-anchor="middle" font-size="11" fill="#6b7280">栅格拖拽布局</text>
+      <text x="420" y="192" text-anchor="middle" font-size="11" fill="#6b7280">由已保存图表组成</text>
+
+      <!-- Batch 4: 定时报表 -->
+      <rect x="600" y="180" width="160" height="90" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+      <text x="680" y="210" text-anchor="middle" font-size="14" font-weight="600" fill="#166534">④ 定时报表</text>
+      <text x="680" y="232" text-anchor="middle" font-size="11" fill="#6b7280">PeriodicTask</text>
+      <text x="680" y="248" text-anchor="middle" font-size="11" fill="#6b7280">邮件/飞书推送</text>
+      <text x="680" y="262" text-anchor="middle" font-size="11" fill="#6b7280">跑 SQL → 截图</text>
+
+      <!-- 依赖箭头 -->
+      <line x1="240" y1="120" x2="318" y2="140" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="278" y="122" text-anchor="middle" font-size="10" fill="#6b7280">图表来源</text>
+
+      <line x1="240" y1="225" x2="318" y2="180" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <text x="278" y="200" text-anchor="middle" font-size="10" fill="#6b7280">大查询支持</text>
+
+      <line x1="520" y1="180" x2="598" y2="210" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="558" y="185" text-anchor="middle" font-size="10" fill="#6b7280">订阅对象</text>
+
+      <!-- 底部图例 -->
+      <rect x="40" y="320" width="720" height="80" rx="6" fill="#fff" stroke="#e5e7eb"/>
+      <text x="60" y="345" font-size="12" font-weight="600" fill="#374151">建议交付批次（每批独立 spec → 独立实现）</text>
+      <circle cx="60" cy="368" r="5" fill="#7c3aed"/><text x="72" y="372" font-size="11" fill="#374151">批次 A：① 图表保存（基础，Dashboard 依赖它）</text>
+      <circle cx="60" cy="388" r="5" fill="#2563eb"/><text x="72" y="392" font-size="11" fill="#374151">批次 B：② 异步大查询（独立，解锁大数据场景）</text>
+      <circle cx="400" cy="368" r="5" fill="#d97706"/><text x="412" y="372" font-size="11" fill="#374151">批次 C：③ Dashboard（依赖 ①）</text>
+      <circle cx="400" cy="388" r="5" fill="#16a34a"/><text x="412" y="392" font-size="11" fill="#374151">批次 D：④ 定时报表（依赖 ③，可选依赖 ②）</text>
+    </svg>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="all-in-one" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>4 个功能写进一份 spec</h3>
+      <p>统一需求文档，分 4 个章节。优点：全局视角完整。缺点：文档很长，实现时跨章节耦合</p>
+    </div>
+  </div>
+  <div class="option" data-choice="split" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>按批次拆成 4 份独立 spec（推荐）</h3>
+      <p>每批一份 spec + 实现计划。先做 ①图表保存，验收后再做 ③Dashboard。优点：每批可独立交付、独立验收，降低风险</p>
+    </div>
+  </div>
+  <div class="option" data-choice="combine-ab" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>① + ② 合并一份，③ + ④ 合并一份</h3>
+      <p>基础能力（图表保存+异步查询）一份，上层应用（Dashboard+定时报表）一份。折中方案</p>
+    </div>
+  </div>
+</div>

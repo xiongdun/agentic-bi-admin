@@ -14,11 +14,14 @@ import {
   fetchBiSqlRun
 } from '@/service/api/bi-sql';
 import { fetchBiDatasourceList, fetchBiTableDetail, fetchBiTableList } from '@/service/api/bi';
+import { autoDetectXY, buildChartOption, chartTypeOptions, type ChartType } from '../shared/chart-config';
+import SaveChartModal from '../shared/save-chart-modal.vue';
 
 defineOptions({ name: 'BiSqlWorkbench' });
 
 const { hasAuth } = useAuth();
 const canRun = computed(() => hasAuth('B_BI_SQL_RUN'));
+const canSaveChart = computed(() => hasAuth('B_BI_CHART_CREATE'));
 
 const editorContainer = ref<HTMLElement>();
 const editor = shallowRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -39,11 +42,12 @@ const currentPage = ref<number>(1);
 const pageSize = ref<number>(50);
 const pageSizes = [20, 50, 100, 200];
 
-type ChartType = 'bar' | 'line' | 'pie' | 'scatter';
 const activeTab = ref<'table' | 'chart'>('table');
 const chartType = ref<ChartType>('bar');
 const chartXAxis = ref<string>('');
 const chartYAxis = ref<string>('');
+
+const saveChartVisible = ref<boolean>(false);
 
 const structureVisible = ref<boolean>(false);
 const structureLoading = ref<boolean>(false);
@@ -83,86 +87,10 @@ const resultColumns = computed<DataTableColumns<Record<string, any>>>(() => {
 
 const totalRows = computed(() => result.value?.rowCount ?? result.value?.rows?.length ?? 0);
 
-const numericColumns = computed(() => {
-  if (!result.value?.columns?.length || !result.value?.rows?.length) return [];
-  return result.value.columns.filter(col =>
-    result.value!.rows.every(row => {
-      const val = row[col];
-      return (
-        val === null ||
-        val === undefined ||
-        typeof val === 'number' ||
-        (typeof val === 'string' && val !== '' && !Number.isNaN(Number(val)))
-      );
-    })
-  );
-});
-
 const columnOptions = computed<SelectOption[]>(() => {
   if (!result.value?.columns?.length) return [];
   return result.value.columns.map(col => ({ label: col, value: col }));
 });
-
-const chartTypeOptions: SelectOption[] = [
-  { label: $t('page.bi.metrics.chartTypes.bar'), value: 'bar' },
-  { label: $t('page.bi.metrics.chartTypes.line'), value: 'line' },
-  { label: $t('page.bi.metrics.chartTypes.pie'), value: 'pie' },
-  { label: $t('page.bi.metrics.chartTypes.scatter'), value: 'scatter' }
-];
-
-function buildChartOptions(): ECOption {
-  if (!result.value?.rows?.length || !chartXAxis.value || !chartYAxis.value) {
-    return {} as ECOption;
-  }
-
-  const rows = result.value.rows;
-  const xCol = chartXAxis.value;
-  const yCol = chartYAxis.value;
-
-  if (chartType.value === 'pie') {
-    return {
-      tooltip: { trigger: 'item' },
-      legend: { orient: 'vertical', left: 'left' },
-      series: [
-        {
-          type: 'pie',
-          radius: '60%',
-          name: yCol,
-          data: rows.map(row => ({ name: String(row[xCol] ?? ''), value: Number(row[yCol]) || 0 }))
-        }
-      ]
-    } as ECOption;
-  }
-
-  if (chartType.value === 'scatter') {
-    return {
-      tooltip: { trigger: 'item' },
-      xAxis: { type: 'value', name: xCol },
-      yAxis: { type: 'value', name: yCol },
-      series: [
-        {
-          type: 'scatter',
-          name: yCol,
-          data: rows.map(row => [Number(row[xCol]) || 0, Number(row[yCol]) || 0])
-        }
-      ]
-    } as ECOption;
-  }
-
-  return {
-    tooltip: { trigger: 'axis' },
-    legend: { data: [yCol] },
-    xAxis: { type: 'category', data: rows.map(row => String(row[xCol] ?? '')) },
-    yAxis: { type: 'value' },
-    series: [
-      {
-        type: chartType.value,
-        name: yCol,
-        data: rows.map(row => Number(row[yCol]) || 0)
-      }
-    ]
-  } as ECOption;
-}
 
 const latestChartOptions = ref<ECOption>({} as ECOption);
 const { domRef: chartRef, setOptions: setChartOptions } = useEcharts(() => ({}) as ECOption, {
@@ -178,8 +106,37 @@ function refreshChart() {
     latestChartOptions.value = {} as ECOption;
     return;
   }
-  latestChartOptions.value = buildChartOptions();
+  latestChartOptions.value = buildChartOption(
+    { columns: result.value.columns, rows: result.value.rows },
+    chartType.value,
+    chartXAxis.value,
+    chartYAxis.value
+  );
   nextTick(() => setChartOptions(latestChartOptions.value));
+}
+
+/** 保存图表的上下文（仅当有结果且轴字段就绪时可用） */
+const chartContext = computed<InstanceType<typeof SaveChartModal>['$props']['chartData']>(() => {
+  if (!result.value?.rows?.length || !datasourceId.value || !chartXAxis.value || !chartYAxis.value) return null;
+  return {
+    datasourceId: datasourceId.value,
+    chartType: chartType.value,
+    xCol: chartXAxis.value,
+    yCol: chartYAxis.value,
+    sqlText: sqlContent.value,
+    resultSnapshot: {
+      columns: result.value.columns,
+      rows: result.value.rows,
+      rowCount: result.value.rowCount,
+      elapsedMs: result.value.elapsedMs
+    },
+    snapshotAt: new Date().toISOString()
+  };
+});
+
+function openSaveChart() {
+  if (!chartContext.value) return;
+  saveChartVisible.value = true;
 }
 
 function autoDetectChartColumns() {
@@ -188,10 +145,7 @@ function autoDetectChartColumns() {
     chartYAxis.value = '';
     return;
   }
-  const cols = result.value.columns;
-  const xCol = cols[0];
-  const numericCols = numericColumns.value;
-  const yCol = numericCols.find(c => c !== xCol) ?? numericCols[0] ?? cols[1] ?? xCol;
+  const { xCol, yCol } = autoDetectXY({ columns: result.value.columns, rows: result.value.rows ?? [] });
   chartXAxis.value = xCol;
   chartYAxis.value = yCol;
 }
@@ -575,6 +529,12 @@ watch(pageSize, () => {
                       style="width: 160px"
                       filterable
                     />
+                    <NButton v-if="canSaveChart && chartContext" size="small" type="primary" @click="openSaveChart">
+                      <template #icon>
+                        <icon-ic-round-save class="text-icon" />
+                      </template>
+                      {{ $t('page.bi.chart.save') }}
+                    </NButton>
                   </NSpace>
                   <div ref="chartRef" class="chart-container" />
                 </div>
@@ -659,6 +619,9 @@ watch(pageSize, () => {
         <NEmpty v-else :description="$t('common.noData')" />
       </NDrawerContent>
     </NDrawer>
+
+    <!-- 保存图表弹窗 -->
+    <SaveChartModal v-model:visible="saveChartVisible" :chart-data="chartContext" />
   </div>
 </template>
 

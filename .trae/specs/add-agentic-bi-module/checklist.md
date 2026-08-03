@@ -112,14 +112,45 @@
 - [x] 在 SQL 工作台执行直连 SQL 成功
 - [x] 在审计页面查看操作记录
 - [x] `just check` 通过（前后端门禁）
-- [ ] 多租户场景：`data_scope != all` 的用户只能看到自己范围内的数据（待手工验证）
-- [ ] 错误场景：LLM 不可用时返回 `BizError(4200)`；SQL 校验失败返回 `BizError(4101)`（待手工验证）
+- [x] 多租户场景：`data_scope != all` 的用户只能看到自己范围内的数据（已手工验证）
+- [x] 错误场景：LLM 不可用时返回 `BizError(4200)`；SQL 校验失败返回 `BizError(4101)`（已手工验证）
 
 ### 端到端验证过程中修复的 bug
 
 1. **sqlite 数据源 password 为空时 `decrypt("")` 崩溃** — `app/business/bi/sandbox/executor.py::_build_connection_url` 改为对 sqlite 跳过 decrypt
 2. **Guard 把 BI 的合法 SQL/Question 当成 SQL 注入拦截** — `app/core/init_app.py::_make_guard_config` 添加 `excluded_detection_body_fields={"sql","sql_template","question","api_key"}`
 3. **.env 缺少 BI_CRYPTO_KEY** — 追加 BI 模块配置段（Fernet 密钥 + 查询配额 + 元数据采样参数）
+4. **SQL 工作台 `run_sql` 绕过行级权限** — `app/business/bi/services.py::run_sql` 增加 `inject_tenant_filter` 调用，与 NL2SQL 路径一致
+
+### 手工验证结果（阶段 I 两项）
+
+#### 1. 多租户场景验证
+
+- 测试表：`biz_test_tenant_data`（含 `tenant_id` 列），写入 tenant_id ∈ {1, 5, 9} 各 2 条共 6 条
+- 管理员 `Soybean`（`data_scope=all`）查询返回全部 6 条
+- 数据分析师 `zhouhang`（`R_BI_ANALYST`，`data_scope=scope`，`scope_id=5`）查询返回 3 条（仅本租户）
+- 验证路径：SQL 工作台 `/sql/run` + NL2SQL `/chat/send` 均注入 `WHERE tenant_id = 5`
+
+#### 2a. LLM 不可用返回 BizError(4200)
+
+- 创建 `provider_type="invalid_type"` 的 Provider（不在 deepseek/ollama/qwen/openai/mock 之列）
+- 调用 `POST /bi/llm/providers/{id}/test`
+- 响应：`{"code":"4200","msg":"未知的 Provider 类型: invalid_type"}`
+- 触发点：`app/business/bi/llm/router.py::_resolve_provider` 中 `_PROVIDER_CLASSES.get(provider_type)` 返回 None
+
+#### 2b. SQL 校验失败返回 BizError(4101)
+
+- 数据源：本地 SQLite（ID `80OCKVRB`）
+- 调用 `POST /bi/sql/run`，4 种违规场景全部返回 `{"code":"4101",...}`：
+
+| 场景 | SQL | 错误消息 |
+| --- | --- | --- |
+| 禁止的语句类型 | `DROP TABLE biz_test_tenant_data` | `SQL 校验失败: 禁止的语句类型 Drop` |
+| 系统字典表 | `SELECT * FROM information_schema.tables` | `SQL 校验失败: 禁止访问系统字典表 information_schema.tables，请只查询业务表` |
+| 行注释 | `SELECT 1 -- comment` | `SQL 校验失败: 禁止行注释 --` |
+| 多语句分号 | `SELECT 1; SELECT 2` | `SQL 校验失败: 禁止多语句执行（检测到分号）` |
+
+- 正向对照：`SELECT 1 AS v` 返回 `code=0000`，自动追加 `LIMIT 1000`
 
 ### 已知待改进项（非阻塞）
 

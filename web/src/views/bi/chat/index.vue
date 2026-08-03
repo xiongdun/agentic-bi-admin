@@ -10,6 +10,7 @@ import {
   fetchBiChatMessages,
   fetchBiChatSessionList,
   fetchDeleteBiChatSession,
+  fetchUpdateBiChatSession,
   sendBiChatMessage
 } from '@/service/api/bi-chat';
 import { fetchBiDatasourceList } from '@/service/api/bi';
@@ -85,6 +86,14 @@ async function handleDeleteSession(id: string) {
   if (!currentSessionId.value && sessions.value.length > 0) {
     await selectSession(sessions.value[0].id);
   }
+}
+
+async function handleRenameSession(id: string, title: string) {
+  const { error } = await fetchUpdateBiChatSession(id, { title });
+  if (error) return;
+  const target = sessions.value.find(item => item.id === id);
+  if (target) target.title = title;
+  window.$message?.success($t('common.modifySuccess'));
 }
 
 function buildTempMessage(role: Api.Bi.ChatRole, content: string): ChatMessage {
@@ -262,6 +271,7 @@ onMounted(async () => {
       @select="selectSession"
       @new="handleNewSession"
       @delete="handleDeleteSession"
+      @rename="handleRenameSession"
       @toggle="collapsed = !collapsed"
     />
     <!-- 右侧消息区 -->
@@ -290,7 +300,12 @@ onMounted(async () => {
         </div>
       </div>
       <!-- 消息展示区 -->
-      <MessageRenderer :messages="messages" :streaming="sending" :has-session="!!currentSessionId" />
+      <MessageRenderer
+        :messages="messages"
+        :streaming="sending"
+        :has-session="!!currentSessionId"
+        :datasource-id="datasourceId"
+      />
       <!-- 输入区 -->
       <MessageInput :sending="sending" :disabled="!currentSessionId" @send="sendMessage" @stop="stopGenerate" />
     </div>

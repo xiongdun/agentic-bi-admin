@@ -1,0 +1,122 @@
+<h2>② 异步大查询 · 设计方案</h2>
+<p class="subtitle">突破 30s 超时 + 10000 行限制，支持百万级数据查询</p>
+
+<div class="section">
+  <h3>核心问题</h3>
+  <p>当前 <code>execute_sql</code> 同步等待（最长 30s 超时，<code>max_rows=10000</code> 限制）。用户跑大表聚合或多年历史数据时，要么超时失败，要么结果被截断。BI 场景里"跑个全年的销售明细"是刚需，但同步阻塞会占用 granian worker，多用户并发时拖垮整个服务。</p>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">执行流程</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="background:#dbeafe;padding:8px;border-radius:6px">
+          <strong>1. 提交查询</strong><br>
+          POST /sql/run-async → 返回 task_id<br>
+          <span style="color:#6b7280">SQL 走完整白名单校验 + 行级注入</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#ede9fe;padding:8px;border-radius:6px">
+          <strong>2. 后台执行</strong><br>
+          app/core/bgtask.py 接管<br>
+          <span style="color:#6b7280">asyncio.wait_for 超时 5min（可配）</span><br>
+          <span style="color:#6b7280">流式拉取，不一次性载入内存</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#fef3c7;padding:8px;border-radius:6px">
+          <strong>3. 结果落库</strong><br>
+          BiQueryTask.result_json + status=success<br>
+          <span style="color:#6b7280">超过 10 万行只存前 10 万 + 标记截断</span>
+        </div>
+        <div style="text-align:center;color:#6b7280">↓</div>
+        <div style="background:#dcfce7;padding:8px;border-radius:6px">
+          <strong>4. 前端获取</strong><br>
+          GET /sql/task/{task_id} → 轮询<br>
+          或 GET /sql/task/{task_id}/stream → SSE<br>
+          <span style="color:#6b7280">完成后展示结果 + 支持导出</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">数据模型 + 状态机</div>
+    <div class="mockup-body" style="padding:16px;font-size:12px;line-height:1.7">
+      <div style="background:#f3f4f6;padding:10px;border-radius:6px;font-family:monospace;margin-bottom:12px">
+        BiQueryTask (新建)<br>
+        ├─ id, tenant_id, created_by<br>
+        ├─ datasource_id<br>
+        ├─ sql_text <span style="color:#6b7280">来源 SQL</span><br>
+        ├─ status <span style="color:#6b7280">pending/running/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6b7280">success/failed/canceled</span><br>
+        ├─ result_json <span style="color:#6b7280">结果快照</span><br>
+        ├─ row_count <span style="color:#6b7280">实际行数</span><br>
+        ├─ is_truncated <span style="color:#6b7280">是否截断</span><br>
+        ├─ error_msg <span style="color:#6b7280">失败原因</span><br>
+        ├─ elapsed_ms<br>
+        └─ expires_at <span style="color:#6b7280">过期清理时间</span>
+      </div>
+      <div style="background:#fef3c7;padding:10px;border-radius:6px">
+        <strong>状态机</strong><br>
+        pending → running → success<br>
+        pending → running → failed<br>
+        running → canceled（用户主动取消）<br>
+        <span style="color:#6b7280">过期任务由定时任务清理（7 天）</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策（需你确认）</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>设计倾向</h4>
+      <ul>
+        <li><strong>任务队列选型</strong>：复用 <code>app/core/bgtask.py</code>（进程内 + Redis 锁），不引入 Celery/ARQ。理由：项目已有此能力，BI 大查询并发量不高（单租户几位数），进程内足够；后续若并发上来再升级</li>
+        <li><strong>超时配置</strong>：异步任务 5 分钟（可配 <code>BI_ASYNC_QUERY_TIMEOUT=300</code>），远大于同步的 30s</li>
+        <li><strong>行数上限</strong>：异步查询 <code>max_rows=100000</code>（同步保持 10000），超过则截断并标记</li>
+        <li><strong>结果存储</strong>：落 <code>BiQueryTask.result_json</code>（JSON 字段），7 天后过期清理。大结果不落库，只存元数据 + 提示用户导出</li>
+        <li><strong>取消机制</strong>：用户可取消 running 状态的任务，通过 asyncio.Task.cancel()</li>
+        <li><strong>前端获取</strong>：优先用 SSE（复用项目已有的 sse_starlette），轮询作为降级</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>风险/限制</h4>
+      <ul>
+        <li>进程内任务在 worker 崩溃时丢失 → status 卡在 running，靠心跳检测（5min 无更新标记 failed）</li>
+        <li>多 worker 下任务可能不在同一进程 → 提交时随机选 worker，结果统一落库所以不影响获取</li>
+        <li>大结果 JSON 可能很大（10 万行约几十 MB）→ 用 orjson 压缩 + 限制落库大小</li>
+        <li>内存控制：流式拉取时用 SQLAlchemy <code>stream_results=True</code>，不一次性 fetchall</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>前端交互</h3>
+  <p>SQL 工作台增加"异步执行"开关（默认关，保持同步快速查询体验）。开启后：</p>
+  <ul style="font-size:13px;line-height:1.8">
+    <li>提交后不阻塞，显示任务列表（状态/耗时/行数）</li>
+    <li>任务完成后自动展示结果，或点击任务查看</li>
+    <li>支持取消 running 中的任务</li>
+    <li>历史任务列表（从 <code>BiQueryTask</code> 查，区分于审计日志）</li>
+  </ul>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>方案 OK，继续看 ③ Dashboard</h3>
+      <p>认可任务队列选型、超时/行数配置、状态机、前端交互</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✗</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端告诉我哪里要改</p>
+    </div>
+  </div>
+</div>

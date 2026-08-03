@@ -246,6 +246,7 @@ onMounted(loadDatasources);
         :data="datasources"
         size="small"
         :scroll-x="1200"
+        :max-height="560"
         :row-key="(row: Api.Bi.BiDatasource) => row.id"
         :row-props="dsRowProps"
         :pagination="false"

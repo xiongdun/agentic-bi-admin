@@ -34,6 +34,9 @@ class BusinessSettings(BaseSettings):
     BI_METADATA_SAMPLE_ROWS: int = 5
     BI_METADATA_BATCH_SIZE: int = 100
 
+    # 图表保存
+    BI_CHART_SNAPSHOT_MAX_ROWS: int = 1000
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

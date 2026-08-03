@@ -11,7 +11,12 @@ TEST_TORTOISE_ORM = {
     },
     "apps": {
         "app_system": {
-            "models": ["app.system.models", "app.system.radar.models", "app.business.hr.models"],
+            "models": [
+                "app.system.models",
+                "app.system.radar.models",
+                "app.business.hr.models",
+                "app.business.bi.models",
+            ],
             "default_connection": "conn_system",
         }
     },
@@ -162,3 +167,37 @@ async def hr_data(app, seed_data):
     await Department.filter(id=dept.id).update(manager_id=emp.id)
 
     return {"department": dept, "tags": [tag_py, tag_js], "employee": emp, "user": user}
+
+
+# ===================== BI Fixtures =====================
+
+
+@pytest_asyncio.fixture(loop_scope="session")
+async def bi_datasource(app, seed_data):
+    """Seed a BI datasource owned by the super admin (tenant_id = user.id).
+
+    每次调用前清理 BiChart / BiDatasource 表，避免测试间数据污染
+    （in-memory DB 是 session 共享的）。tenant_id 与 API 上下文中的 user_id 一致，
+    确保 API 测试中 ``tenant_id=user_id`` 能匹配到该数据源。
+    """
+    from app.business.bi.models import BiChart, BiDatasource
+
+    user = seed_data
+
+    # 清理上一轮测试残留的图表与数据源
+    await BiChart.all().delete()
+    await BiDatasource.all().delete()
+
+    ds = await BiDatasource.create(
+        name="Test SQLite DS",
+        db_type="sqlite",
+        host=":memory:",
+        port=0,
+        username="",
+        password="",
+        database=":memory:",
+        tenant_id=user.id,
+        created_by=str(user.id),
+        updated_by=str(user.id),
+    )
+    return ds

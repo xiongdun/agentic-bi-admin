@@ -325,6 +325,11 @@ declare namespace Api {
       title?: string;
     };
 
+    /** 修改会话请求 */
+    type BiChatSessionUpdateParams = {
+      title: string;
+    };
+
     // ---- SSE 事件类型 ----
 
     /** Agent 单节点执行留痕事件 */
@@ -597,6 +602,103 @@ declare namespace Api {
         sql: string;
       }>;
       error?: string;
+    };
+
+    // ============================================================
+    // Chart（保存的图表）
+    // ============================================================
+
+    /** 图表结果快照（与 SqlExecutionResult 对齐，外加 isTruncated 标记） */
+    type ChartResultSnapshot = {
+      columns: string[];
+      rows: Record<string, any>[];
+      rowCount: number;
+      elapsedMs: number;
+      isTruncated?: boolean;
+    };
+
+    /** 保存的图表实体 */
+    type BiChart = Common.CommonRecord<{
+      /** 图表标题 */
+      name: string;
+      /** 图表说明 */
+      description?: string | null;
+      /** 所属数据源 ID（sqid） */
+      datasourceId: string;
+      /** 图表类型 */
+      chartType: string;
+      /** X 轴字段名 */
+      xCol?: string | null;
+      /** Y 轴字段名 */
+      yCol?: string | null;
+      /** 来源 SQL（用于刷新数据） */
+      sqlText: string;
+      /** 结果快照（最多 1000 行） */
+      resultSnapshot: ChartResultSnapshot;
+      /** 标签（逗号分隔） */
+      tags?: string | null;
+      /** 是否开启外部分享 */
+      isPublic: boolean;
+      /** 外部分享 token（sqid 编码） */
+      shareToken?: string | null;
+      /** 结果快照生成时间 */
+      snapshotAt: string;
+    }>;
+
+    /** 图表分页搜索参数 */
+    type BiChartSearchParams = CommonSearchParams & {
+      /** 按名称模糊搜索 */
+      name?: string;
+      /** 按标签筛选（包含某个标签） */
+      tags?: string;
+      /** 按数据源筛选（sqid） */
+      datasourceId?: string;
+    };
+
+    /** 图表分页列表 */
+    type BiChartList = {
+      records: BiChart[];
+      total: number;
+      current: number;
+      size: number;
+    };
+
+    /** 创建/更新图表参数 */
+    type BiChartOperateParams = {
+      id?: string;
+      name: string;
+      description?: string | null;
+      datasourceId: string;
+      chartType: string;
+      xCol?: string | null;
+      yCol?: string | null;
+      sqlText: string;
+      resultSnapshot: ChartResultSnapshot;
+      tags?: string | null;
+      snapshotAt: string;
+    };
+
+    /** 图表刷新结果（返回完整图表） */
+    type BiChartRefreshResult = BiChart;
+
+    /** 开启分享结果 */
+    type BiChartShareEnableResult = {
+      shareToken: string;
+    };
+
+    /** 免登录查看分享图表响应（不含 sqlText） */
+    type BiChartShared = {
+      name: string;
+      chartType: string;
+      xCol?: string | null;
+      yCol?: string | null;
+      resultSnapshot: ChartResultSnapshot;
+      snapshotAt: string;
+    };
+
+    /** 图表标签列表响应 */
+    type BiChartTagsResult = {
+      tags: string[];
     };
   }
 }

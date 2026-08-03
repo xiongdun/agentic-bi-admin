@@ -6,7 +6,7 @@ autodiscover 通过本文件识别模块：注册路由前缀 /api/v1/business/b
 
 from __future__ import annotations
 
-from app.business.bi.api import router
+from app.business.bi.api import public_router, router
 from app.business.bi.events import BI_EVENTS
 from app.business.bi.init_data import INIT_DATA, init
 from app.business.bi.policies import BI_DATA_POLICIES
@@ -25,6 +25,8 @@ module = BusinessModule(
     version="0.1.0",
     routers=[
         BusinessRouter(router=router, auth="permission", tags=["智能 BI"]),
+        # 公开路由：免登录查看分享图表（/charts/shared/{token}）
+        BusinessRouter(router=public_router, auth="public", tags=["智能 BI"]),
     ],
     init=init,
     permissions=PermissionSpec(init_data=INIT_DATA),

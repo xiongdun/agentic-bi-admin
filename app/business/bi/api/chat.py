@@ -23,6 +23,7 @@ from app.business.bi.schemas import (
     BiChatMessageSearch,
     BiChatSessionCreate,
     BiChatSessionSearch,
+    BiChatSessionUpdate,
     ChatSendSchema,
 )
 from app.business.bi.services import (
@@ -30,6 +31,7 @@ from app.business.bi.services import (
     list_session_messages,
     list_user_sessions,
     send_chat_message,
+    update_chat_session,
 )
 from app.business.bi.sse import bi_sse_response
 from app.utils import (
@@ -85,6 +87,19 @@ async def delete_session(session_id: SqidPath):
     user_id = get_current_user_id()
     deleted_id = await delete_chat_session(session_id, user_id)
     return Success(msg="删除成功", data={"deletedId": deleted_id, "deleted_id": deleted_id})
+
+
+@router.patch(
+    "/chat/sessions/{session_id}",
+    summary="修改对话会话标题",
+    name="bi.chat.update",
+    dependencies=[DependAuth, require_buttons("B_BI_CHAT_NEW")],
+)
+async def update_session(session_id: SqidPath, obj_in: BiChatSessionUpdate):  # type: ignore[invalidTypeForm]
+    """修改会话标题（仅会话创建人可修改）。"""
+    user_id = get_current_user_id()
+    updated_id = await update_chat_session(session_id, user_id, obj_in)
+    return Success(msg="修改成功", data={"updatedId": updated_id, "updated_id": updated_id})
 
 
 @router.post(
