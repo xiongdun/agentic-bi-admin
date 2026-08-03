@@ -566,3 +566,43 @@ class BiChartSharedOutSchema(SchemaBase):
     y_col: str | None = Field(None, title="Y 轴字段")
     result_snapshot: dict = Field(title="结果快照")
     snapshot_at: datetime = Field(title="快照生成时间")
+
+
+# ============================================================
+# async query：BiQueryTask
+# ============================================================
+
+
+class BiAsyncRunSchema(SchemaBase):
+    """手动提交异步查询。"""
+
+    sql: str = Field(title="要执行的 SQL")
+    datasource_id: str = Field(title="数据源 ID（sqid）")
+    name: str | None = Field(None, max_length=100, title="任务名称（可选）")
+
+
+class BiQueryTaskSearchSchema(PageQueryBase):
+    """任务分页查询。"""
+
+    name: str | None = Field(None, title="按名称模糊搜索")
+    status: str | None = Field(None, title="按状态筛选：pending/running/success/failed/cancelled")
+    datasource_id: str | None = Field(None, title="按数据源筛选（sqid）")
+
+
+class BiQueryTaskOutSchema(SchemaBase):
+    """任务响应（不含 sql_text 全文，详情接口才返回）。"""
+
+    id: str | None = Field(None, title="任务 ID（sqid）")
+    name: str | None = Field(None, title="任务名称")
+    datasource_id: str | None = Field(None, title="数据源 ID（sqid）")
+    status: str | None = Field(None, title="任务状态")
+    progress: int | None = Field(None, title="进度百分比 0-100")
+    rows_fetched: int | None = Field(None, title="已扫描行数")
+    elapsed_ms: int | None = Field(None, title="执行耗时（毫秒）")
+    result_row_count: int | None = Field(None, title="结果总行数")
+    result_is_truncated: bool | None = Field(None, title="结果是否被截断")
+    error_message: str | None = Field(None, title="错误信息")
+    started_at: datetime | None = Field(None, title="开始执行时间")
+    finished_at: datetime | None = Field(None, title="完成时间")
+    source: str | None = Field(None, title="提交来源")
+    created_at: datetime | None = Field(None, title="创建时间")
