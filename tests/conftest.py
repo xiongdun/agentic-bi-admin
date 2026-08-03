@@ -180,12 +180,13 @@ async def bi_datasource(app, seed_data):
     （in-memory DB 是 session 共享的）。tenant_id 与 API 上下文中的 user_id 一致，
     确保 API 测试中 ``tenant_id=user_id`` 能匹配到该数据源。
     """
-    from app.business.bi.models import BiChart, BiDatasource
+    from app.business.bi.models import BiChart, BiDashboard, BiDatasource
 
     user = seed_data
 
-    # 清理上一轮测试残留的图表与数据源
+    # 清理上一轮测试残留的图表、仪表盘与数据源
     await BiChart.all().delete()
+    await BiDashboard.all().delete()
     await BiDatasource.all().delete()
 
     ds = await BiDatasource.create(

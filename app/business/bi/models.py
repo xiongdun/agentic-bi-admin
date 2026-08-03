@@ -356,3 +356,28 @@ class BiQueryTask(BaseModel, AuditMixin, SoftDeleteMixin):
             ("tenant_id", "status"),
             ("tenant_id", "created_at"),
         ]
+
+
+# ==================== dashboard 子模块 ====================
+
+
+class BiDashboard(BaseModel, AuditMixin, SoftDeleteMixin):
+    """仪表盘：把多个 BiChart 组装成 12 列栅格布局。
+
+    ``layout`` 存 ``{"items": [{chartId, x, y, w, h}]}``，引用 BiChart（不级联删）。
+    打开时全量刷新所有图表数据，失败的卡片显示占位。
+    """
+
+    id = fields.IntField(primary_key=True, description="主键ID")
+    name = fields.CharField(max_length=100, description="仪表盘名称")
+    description = fields.TextField(null=True, blank=True, description="说明")
+    # 布局：{items: [{chartId, x, y, w, h}]}，chartId 为 BiChart 的 SQID 编码字符串
+    layout = fields.JSONField(default={"items": []}, description="布局：{items: [{chartId, x, y, w, h}]}")
+    tenant_id = fields.IntField(default=0, description="租户ID（行级 data_scope 作用域，存 user.id）")
+
+    class Meta:
+        table = "biz_bi_dashboard"
+        manager = SoftDeleteManager()
+        indexes = [
+            ("tenant_id", "created_at"),
+        ]
