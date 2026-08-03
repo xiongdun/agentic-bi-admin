@@ -300,6 +300,53 @@ declare namespace App {
           filterByTag: string;
           filterByDatasource: string;
         };
+        'async-query-tasks': {
+          title: string;
+          searchNamePlaceholder: string;
+          statusPlaceholder: string;
+          transferredMessage: string;
+          cancelConfirm: string;
+          deleteConfirm: string;
+          sourceManual: string;
+          sourceAutoTransfer: string;
+          columns: {
+            name: string;
+            status: string;
+            progress: string;
+            rowsFetched: string;
+            elapsedMs: string;
+            source: string;
+            createdAt: string;
+            actions: string;
+          };
+          status: {
+            pending: string;
+            running: string;
+            success: string;
+            failed: string;
+            cancelled: string;
+          };
+          actions: {
+            view: string;
+            cancel: string;
+            cancelSuccess: string;
+            download: string;
+            delete: string;
+          };
+          detail: {
+            title: string;
+            back: string;
+            cancel: string;
+            download: string;
+            sqlLabel: string;
+            previewTitle: string;
+            previewSummary: string;
+            truncated: string;
+            resultRowCount: string;
+            startedAt: string;
+            finishedAt: string;
+          };
+        };
       };
     }
   }

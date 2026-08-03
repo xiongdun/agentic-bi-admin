@@ -1,8 +1,8 @@
 import { request } from '../request';
 
-/** 执行 SQL（白名单校验 + 自动 LIMIT + 配额限制） */
+/** 执行 SQL（白名单校验 + 自动 LIMIT + 配额限制；软超时会返回 transferred 联合类型） */
 export function fetchBiSqlRun(data: Api.Bi.SqlRunParams) {
-  return request<Api.Bi.SqlExecutionResult>({
+  return request<Api.Bi.BiSqlRunResult>({
     url: '/business/bi/sql/run',
     method: 'post',
     data

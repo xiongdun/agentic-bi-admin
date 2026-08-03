@@ -128,6 +128,31 @@ BI_MENU_CHILDREN = [
         "hide_in_menu": True,
         "active_menu": "bi_charts",
     },
+    {
+        "menu_name": "查询任务",
+        "route_name": "bi_async-query-tasks",
+        "route_path": "/bi/async-query-tasks",
+        "component": "view.bi_async-query-tasks",
+        "icon": "mdi:cloud-download-outline",
+        "order": 8,
+        "buttons": [
+            {"button_code": "B_BI_SQL_ASYNC_RUN", "button_desc": "提交异步查询"},
+            {"button_code": "B_BI_SQL_TASK_VIEW", "button_desc": "查看任务"},
+            {"button_code": "B_BI_SQL_TASK_CANCEL", "button_desc": "取消任务"},
+            {"button_code": "B_BI_SQL_TASK_DELETE", "button_desc": "删除任务"},
+            {"button_code": "B_BI_SQL_TASK_DOWNLOAD", "button_desc": "下载结果"},
+        ],
+    },
+    {
+        "menu_name": "任务详情",
+        "route_name": "bi_async-query-detail",
+        "route_path": "/bi/async-query-detail/:id",
+        "component": "view.bi_async-query-detail",
+        "icon": "mdi:chart-line",
+        "order": 99,
+        "hide_in_menu": True,
+        "active_menu": "bi_async-query-tasks",
+    },
 ]
 
 # BI 全量按钮码聚合，便于角色授权引用。
@@ -158,6 +183,11 @@ BI_ALL_BUTTONS = [
     "B_BI_CHART_DELETE",
     "B_BI_CHART_REFRESH",
     "B_BI_CHART_SHARE",
+    "B_BI_SQL_ASYNC_RUN",
+    "B_BI_SQL_TASK_VIEW",
+    "B_BI_SQL_TASK_CANCEL",
+    "B_BI_SQL_TASK_DELETE",
+    "B_BI_SQL_TASK_DOWNLOAD",
 ]
 
 # BI 全量菜单 route_name（含顶级与子菜单）。
@@ -173,6 +203,8 @@ BI_ALL_MENUS = [
     "bi_audit",
     "bi_charts",
     "bi_chart-detail",
+    "bi_async-query-tasks",
+    "bi_async-query-detail",
 ]
 
 # 数据分析师可见菜单与按钮码子集。
@@ -184,6 +216,8 @@ BI_ANALYST_MENUS = [
     "bi_metrics",
     "bi_charts",
     "bi_chart-detail",
+    "bi_async-query-tasks",
+    "bi_async-query-detail",
 ]
 BI_ANALYST_BUTTONS = [
     "B_BI_CHAT_NEW",
@@ -196,6 +230,11 @@ BI_ANALYST_BUTTONS = [
     "B_BI_CHART_DELETE",
     "B_BI_CHART_REFRESH",
     "B_BI_CHART_SHARE",
+    "B_BI_SQL_ASYNC_RUN",
+    "B_BI_SQL_TASK_VIEW",
+    "B_BI_SQL_TASK_CANCEL",
+    "B_BI_SQL_TASK_DELETE",
+    "B_BI_SQL_TASK_DOWNLOAD",
 ]
 
 # apis 字段：BI API 路由的 route_key（``APIRoute.name``）列表。
@@ -271,6 +310,14 @@ BI_ADMIN_APIS: list[str] = [
     "bi.charts.share_enable",
     "bi.charts.share_disable",
     "bi.charts.shared",
+    # async_query（提交 + 列表 + 详情 + 结果 + 取消 + 删除 + 下载）
+    "bi.tasks.run",
+    "bi.tasks.list",
+    "bi.tasks.get",
+    "bi.tasks.result",
+    "bi.tasks.cancel",
+    "bi.tasks.delete",
+    "bi.tasks.download",
 ]
 
 # 数据分析师：仅对话 / SQL 工作台 / 指标查看相关路由
@@ -310,6 +357,14 @@ BI_ANALYST_APIS: list[str] = [
     "bi.charts.share_enable",
     "bi.charts.share_disable",
     "bi.charts.shared",
+    # async_query（提交 + 列表 + 详情 + 结果 + 取消 + 删除 + 下载 — 数据分析师可提交和管理自己的异步任务）
+    "bi.tasks.run",
+    "bi.tasks.list",
+    "bi.tasks.get",
+    "bi.tasks.result",
+    "bi.tasks.cancel",
+    "bi.tasks.delete",
+    "bi.tasks.download",
 ]
 
 BI_ROLE_SEEDS = [

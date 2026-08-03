@@ -15,6 +15,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -98,6 +99,7 @@ async def execute_sql(
     user_id: int,
     timeout: int | None = None,
     max_rows: int | None = None,
+    redis: Redis | None = None,
 ) -> ExecutionResult:
     """执行 SQL 并返回结果。
 
@@ -107,6 +109,7 @@ async def execute_sql(
         user_id: 用户 ID（用于配额检查）
         timeout: 超时秒数（None 用默认）
         max_rows: 最大行数（None 用默认）
+        redis: Redis 客户端（用于熔断计数）。None 时跳过熔断（向后兼容）。
 
     Returns:
         ExecutionResult: 执行结果
@@ -114,8 +117,11 @@ async def execute_sql(
     Raises:
         BizError: 执行失败 / 配额超限 / 超时
     """
-    # 配额检查
-    check_quota(user_id)
+    scope = f"user:{user_id}"
+
+    # 配额检查（多 worker 共享 Redis ZSet）
+    if redis is not None:
+        await check_quota(scope, redis)
 
     engine = await get_engine(datasource)
     timeout_seconds = timeout or get_timeout()
@@ -143,7 +149,8 @@ async def execute_sql(
         check_row_limit(len(rows))
 
         # 记录成功
-        record_success(user_id)
+        if redis is not None:
+            await record_success(scope, redis)
 
         return ExecutionResult(
             rows=rows,
@@ -154,10 +161,12 @@ async def execute_sql(
 
     except BizError:
         # 配额 / 行数错误直接抛出
-        record_failure(user_id)
+        if redis is not None:
+            await record_failure(scope, redis)
         raise
     except Exception as e:
-        record_failure(user_id)
+        if redis is not None:
+            await record_failure(scope, redis)
         elapsed_ms = int((time.time() - start) * 1000)
         raise BizError(4104, f"SQL 执行失败: {e}") from e
 

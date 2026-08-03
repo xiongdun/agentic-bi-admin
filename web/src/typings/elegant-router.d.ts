@@ -40,6 +40,8 @@ declare module "@elegant-router/types" {
     "alova_request": "/alova/request";
     "alova_scenes": "/alova/scenes";
     "bi": "/bi";
+    "bi_async-query-detail": "/bi/async-query-detail/:id";
+    "bi_async-query-tasks": "/bi/async-query-tasks";
     "bi_audit": "/bi/audit";
     "bi_chart-detail": "/bi/chart-detail/:id";
     "bi_charts": "/bi/charts";
@@ -211,6 +213,8 @@ declare module "@elegant-router/types" {
     | "about"
     | "alova_request"
     | "alova_scenes"
+    | "bi_async-query-detail"
+    | "bi_async-query-tasks"
     | "bi_audit"
     | "bi_chart-detail"
     | "bi_charts"

@@ -28,6 +28,7 @@ from app.business.bi.schemas import (
     SqlRunSchema,
 )
 from app.business.bi.services import generate_select, list_sql_history, preview_table, run_sql
+from app.core.redis import AioRedis
 from app.utils import (
     DependAuth,
     SqidPath,
@@ -46,10 +47,10 @@ router = APIRouter()
     name="bi.sql.run",
     dependencies=[DependAuth, require_buttons("B_BI_SQL_RUN")],
 )
-async def run_sql_endpoint(obj_in: SqlRunSchema):
+async def run_sql_endpoint(obj_in: SqlRunSchema, redis: AioRedis):
     """执行 SQL（白名单校验 + 自动 LIMIT + 配额限制）。"""
     user = _get_user_or_raise()
-    result = await run_sql(user, obj_in)
+    result = await run_sql(user, obj_in, redis=redis)
     return Success(data=result)
 
 
@@ -114,14 +115,14 @@ async def list_sql_history_endpoint(obj_in: BiAuditLogSearch):
     name="bi.sql.preview",
     dependencies=[DependAuth, require_buttons("B_BI_SQL_RUN")],
 )
-async def preview_table_endpoint(datasource_id: SqidPath, table_name: str):
+async def preview_table_endpoint(datasource_id: SqidPath, table_name: str, redis: AioRedis):
     """预览表前 100 行数据。
 
     路径参数：
     - ``datasource_id`` —— 数据源 ID（sqid，自动解码）
     - ``table_name`` —— 表名
     """
-    result = await preview_table(datasource_id, table_name)
+    result = await preview_table(datasource_id, table_name, redis=redis)
     return Success(data=result)
 
 

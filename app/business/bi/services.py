@@ -391,11 +391,15 @@ async def send_chat_message(user, schema: ChatSendSchema) -> AsyncGenerator[dict
 # ============================================================
 
 
-async def run_sql(user, schema: SqlRunSchema) -> dict:
+async def run_sql(user, schema: SqlRunSchema, redis=None) -> dict:
     """执行 SQL（已通过白名单校验 + 自动 LIMIT + 行级注入）。
 
+    Args:
+        redis: Redis 客户端（用于熔断计数 + 软超时转异步）
+
     Returns:
-        SqlRunResult 兼容 dict
+        SqlRunResult 兼容 dict —— 成功时含 ``columns``/``rows``/``rowCount``/``elapsedMs``；
+        软超时转异步时含 ``transferred=True`` 与 ``taskId``。
     """
     user_id = int(user.id)
     ds_id = decode_id(schema.datasource_id)
@@ -415,10 +419,43 @@ async def run_sql(user, schema: SqlRunSchema) -> dict:
     if should_inject_tenant(data_scope) and scope_id is not None:
         safe_sql = inject_tenant_filter(safe_sql, scope_id, dialect=dialect)
 
-    # 执行
-    result: ExecutionResult = await execute_sql(safe_sql, ds, user_id=user_id)
+    # 软超时：超过 BI_SYNC_SOFT_TIMEOUT 则转异步任务（仅当 redis 可用 + 异步查询开启）
+    from app.business.bi.config import BIZ_SETTINGS
 
-    # 写审计日志
+    if redis is not None and BIZ_SETTINGS.BI_ASYNC_QUERY_ENABLED:
+        import asyncio as _asyncio
+
+        try:
+            result: ExecutionResult = await _asyncio.wait_for(
+                execute_sql(safe_sql, ds, user_id=user_id, redis=redis),
+                timeout=BIZ_SETTINGS.BI_SYNC_SOFT_TIMEOUT,
+            )
+        except _asyncio.TimeoutError:
+            # 转异步任务（submit 内部会重新走完整校验链 + 行级注入）
+            from app.business.bi.schemas import BiAsyncRunSchema
+            from app.business.bi.services_async_query import submit as _submit_async
+
+            async_schema = BiAsyncRunSchema(
+                sql=schema.sql,
+                datasource_id=schema.datasource_id,
+                name=f"软超时转异步-{datetime.now().strftime('%H%M%S')}",
+            )
+            task = await _submit_async(async_schema, user_id=user_id, redis=redis, source="auto_transfer")
+            radar_log(
+                "SQL 软超时转异步",
+                data={"userId": user_id, "taskId": task.id, "datasourceId": ds_id},
+            )
+            return {
+                "transferred": True,
+                "taskId": encode_id(task.id),
+                "message": "查询超时，已转为异步任务",
+                "datasource_id": schema.datasource_id,
+                "sql_text": schema.sql,
+            }
+    else:
+        result = await execute_sql(safe_sql, ds, user_id=user_id, redis=redis)
+
+    # 写审计日志（仅同步成功路径）
     await BiAuditLog.create(
         event_type="QUERY_OPERATION",
         action="执行 SQL",
@@ -453,7 +490,7 @@ async def run_sql(user, schema: SqlRunSchema) -> dict:
     }
 
 
-async def preview_table(datasource_id: int, table_name: str) -> dict:
+async def preview_table(datasource_id: int, table_name: str, redis=None) -> dict:
     """预览表前 100 行。"""
     ds = await bi_datasource_controller.get_or_none(id=datasource_id)
     if ds is None:
@@ -465,7 +502,7 @@ async def preview_table(datasource_id: int, table_name: str) -> dict:
 
     # 直接走 execute_sql（preview 默认已含 LIMIT 100，跳过白名单二次添加）
     user_id = get_current_user_id() or 0
-    result = await execute_sql(sql, ds, user_id=user_id, max_rows=100)
+    result = await execute_sql(sql, ds, user_id=user_id, max_rows=100, redis=redis)
 
     return {
         "sql": sql,

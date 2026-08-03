@@ -207,7 +207,7 @@ watch(visible, () => {
               v-model:value="extraConfigText"
               type="textarea"
               :rows="4"
-              placeholder="{&quot;temperature&quot;: 0.7, &quot;maxTokens&quot;: 2048}"
+              placeholder='{"temperature": 0.7, "maxTokens": 2048}'
             />
           </NFormItemGi>
         </NGrid>

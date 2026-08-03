@@ -186,6 +186,8 @@ const routeMap: RouteMap = {
   "alova_request": "/alova/request",
   "alova_scenes": "/alova/scenes",
   "bi": "/bi",
+  "bi_async-query-detail": "/bi/async-query-detail/:id",
+  "bi_async-query-tasks": "/bi/async-query-tasks",
   "bi_audit": "/bi/audit",
   "bi_chart-detail": "/bi/chart-detail/:id",
   "bi_charts": "/bi/charts",

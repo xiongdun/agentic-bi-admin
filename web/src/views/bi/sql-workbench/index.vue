@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import type { DataTableColumns, DropdownOption, SelectOption } from 'naive-ui';
 import * as monaco from 'monaco-editor';
 import { useEcharts } from '@/hooks/common/echarts';
@@ -19,6 +20,7 @@ import SaveChartModal from '../shared/save-chart-modal.vue';
 
 defineOptions({ name: 'BiSqlWorkbench' });
 
+const router = useRouter();
 const { hasAuth } = useAuth();
 const canRun = computed(() => hasAuth('B_BI_SQL_RUN'));
 const canSaveChart = computed(() => hasAuth('B_BI_CHART_CREATE'));
@@ -206,7 +208,14 @@ async function handleExecute() {
   try {
     const { data, error } = await fetchBiSqlRun({ sql: sqlContent.value, datasourceId: datasourceId.value });
     if (!error && data) {
-      result.value = data;
+      // 智能切换：软超时自动转异步任务
+      if ('transferred' in data) {
+        const transferred = data as Api.Bi.BiSqlRunTransferredResult;
+        window.$message?.info(transferred.message || $t('page.bi.async-query-tasks.transferredMessage'));
+        router.push({ name: 'bi_async-query-detail', params: { id: transferred.taskId } });
+        return;
+      }
+      result.value = data as Api.Bi.SqlExecutionResult;
       currentPage.value = 1;
       autoDetectChartColumns();
       refreshChart();

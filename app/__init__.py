@@ -153,6 +153,36 @@ async def lifespan(_app: FastAPI):
         task_runner.start()
         _app.state.business_task_runner = task_runner
 
+        # 启动 bi.async_query worker 协程（每个 granian worker 一个）
+        try:
+            from app.business.bi.config import BIZ_SETTINGS
+
+            if BIZ_SETTINGS.BI_ASYNC_QUERY_ENABLED:
+                from app.business.bi.async_query.runner import (
+                    recover_stale_tasks,
+                    set_shutdown_event,
+                    worker_loop,
+                )
+                from app.business.bi.async_query.state import set_runtime_redis
+
+                # 注入运行期 redis 单例，供 PeriodicTask handler（无参签名）使用
+                set_runtime_redis(_app.state.redis)
+                async_query_shutdown = asyncio.Event()
+                set_shutdown_event(async_query_shutdown)
+                # crash recovery：扫描上次未完成的任务
+                try:
+                    recovered = await recover_stale_tasks(_app.state.redis)
+                    if recovered:
+                        log.info("bi.async_query recovered {} stale tasks", recovered)
+                except Exception:
+                    log.exception("bi.async_query recover_stale_tasks failed")
+
+                async_query_task = asyncio.create_task(worker_loop(_app.state.redis, _app), name="bi.async_query.worker")
+                _app.state.async_query_worker = async_query_task
+                _app.state.async_query_shutdown = async_query_shutdown
+        except ImportError:
+            pass
+
         if is_leader:
             if APP_SETTINGS.GUARD_ENABLED:
                 log.info("fastapi-guard 已启动")
@@ -164,6 +194,20 @@ async def lifespan(_app: FastAPI):
         yield
 
     finally:
+        # 优雅停止 bi.async_query worker
+        async_query_shutdown = getattr(_app.state, "async_query_shutdown", None)
+        async_query_worker = getattr(_app.state, "async_query_worker", None)
+        if async_query_shutdown is not None:
+            async_query_shutdown.set()
+        if async_query_worker is not None:
+            try:
+                await asyncio.wait_for(async_query_worker, timeout=10)
+            except asyncio.TimeoutError:
+                log.warning("bi.async_query worker did not stop gracefully within 10s, cancelling")
+                async_query_worker.cancel()
+            except Exception:
+                pass
+
         if task_runner is not None:
             await task_runner.stop()
         if APP_SETTINGS.RADAR_ENABLED:

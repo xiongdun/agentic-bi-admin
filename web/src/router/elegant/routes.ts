@@ -94,6 +94,27 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'bi_async-query-detail',
+        path: '/bi/async-query-detail/:id',
+        component: 'view.bi_async-query-detail',
+        props: true,
+        meta: {
+          title: 'bi_async-query-detail',
+          i18nKey: 'route.bi_async-query-detail',
+          hideInMenu: true,
+          activeMenu: 'bi_async-query-tasks'
+        }
+      },
+      {
+        name: 'bi_async-query-tasks',
+        path: '/bi/async-query-tasks',
+        component: 'view.bi_async-query-tasks',
+        meta: {
+          title: 'bi_async-query-tasks',
+          i18nKey: 'route.bi_async-query-tasks'
+        }
+      },
+      {
         name: 'bi_audit',
         path: '/bi/audit',
         component: 'view.bi_audit',

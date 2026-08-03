@@ -11,6 +11,8 @@ const biLocale = {
     bi_audit: 'Audit Log',
     bi_charts: 'Charts',
     'bi_chart-detail': 'Chart Detail',
+    'bi_async-query-tasks': 'Query Tasks',
+    'bi_async-query-detail': 'Task Detail',
     bi_share: 'Shared Chart'
   },
   page: {
@@ -303,6 +305,53 @@ const biLocale = {
         searchPlaceholder: 'Search chart name',
         filterByTag: 'Filter by tag',
         filterByDatasource: 'Filter by datasource'
+      },
+      'async-query-tasks': {
+        title: 'Query Tasks',
+        searchNamePlaceholder: 'Search by name',
+        statusPlaceholder: 'Filter by status',
+        transferredMessage: 'Query timed out, transferred to async task, redirecting to detail...',
+        cancelConfirm: 'Cancel this task?',
+        deleteConfirm: 'Delete this task?',
+        sourceManual: 'Manual',
+        sourceAutoTransfer: 'Auto Transfer',
+        columns: {
+          name: 'Name',
+          status: 'Status',
+          progress: 'Progress',
+          rowsFetched: 'Rows Fetched',
+          elapsedMs: 'Elapsed (ms)',
+          source: 'Source',
+          createdAt: 'Created At',
+          actions: 'Actions'
+        },
+        status: {
+          pending: 'Pending',
+          running: 'Running',
+          success: 'Success',
+          failed: 'Failed',
+          cancelled: 'Cancelled'
+        },
+        actions: {
+          view: 'View',
+          cancel: 'Cancel',
+          cancelSuccess: 'Cancelled',
+          download: 'Download',
+          delete: 'Delete'
+        },
+        detail: {
+          title: 'Task Detail',
+          back: 'Back to List',
+          cancel: 'Cancel Task',
+          download: 'Download CSV',
+          sqlLabel: 'SQL',
+          previewTitle: 'Result Preview',
+          previewSummary: '{total} rows total, {preview} previewed{truncated}',
+          truncated: ', truncated',
+          resultRowCount: 'Result Rows',
+          startedAt: 'Started At',
+          finishedAt: 'Finished At'
+        }
       }
     }
   }

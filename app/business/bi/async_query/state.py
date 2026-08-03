@@ -32,7 +32,7 @@ def _cancel_key(task_id: int) -> str:
 async def init_state(task_id: int, redis: Redis, status: str = "pending") -> None:
     """任务提交时初始化 Redis Hash。"""
     key = _task_key(task_id)
-    await redis.hset(
+    await redis.hset(  # type: ignore[arg-type]
         key,
         mapping={
             "status": status,
@@ -51,7 +51,7 @@ async def update_status(task_id: int, status: str, redis: Redis, error_message: 
     fields: dict[str, str] = {"status": status}
     if error_message is not None:
         fields["error_message"] = error_message
-    await redis.hset(_task_key(task_id), mapping=fields)
+    await redis.hset(_task_key(task_id), mapping=fields)  # type: ignore[arg-type]
 
 
 async def update_progress(
@@ -70,16 +70,16 @@ async def update_progress(
     if elapsed_ms is not None:
         fields["elapsed_ms"] = str(elapsed_ms)
     if fields:
-        await redis.hset(_task_key(task_id), mapping=fields)
+        await redis.hset(_task_key(task_id), mapping=fields)  # type: ignore[arg-type]
 
 
 async def set_started_at(task_id: int, redis: Redis, started_at: datetime) -> None:
-    await redis.hset(_task_key(task_id), mapping={"started_at": started_at.isoformat()})
+    await redis.hset(_task_key(task_id), mapping={"started_at": started_at.isoformat()})  # type: ignore[arg-type]
 
 
 async def get_state(task_id: int, redis: Redis) -> dict[str, Any]:
     """读取任务实时状态。"""
-    raw = await redis.hgetall(_task_key(task_id))
+    raw = await redis.hgetall(_task_key(task_id))  # type: ignore[arg-type]
     if not raw:
         return {}
     decoded: dict[str, Any] = {}

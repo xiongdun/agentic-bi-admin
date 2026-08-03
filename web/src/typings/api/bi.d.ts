@@ -700,5 +700,104 @@ declare namespace Api {
     type BiChartTagsResult = {
       tags: string[];
     };
+
+    // ============================================================
+    // 异步大查询（BiQueryTask）
+    // ============================================================
+
+    /** 异步查询任务状态 */
+    type BiQueryTaskStatus = 'pending' | 'running' | 'success' | 'failed' | 'cancelled';
+
+    /** 异步查询任务结果快照（结构同 SqlExecutionResult，外加 isTruncated） */
+    type BiQueryTaskSnapshot = {
+      columns: string[];
+      rows: Record<string, any>[];
+      rowCount: number;
+      elapsedMs: number;
+      isTruncated: boolean;
+    };
+
+    /** 异步查询任务 */
+    interface BiQueryTask {
+      /** 任务 ID（sqid） */
+      id: string;
+      /** 任务名称 */
+      name: string | null;
+      /** 数据源 ID（sqid） */
+      datasourceId: string;
+      /** 任务状态 */
+      status: BiQueryTaskStatus;
+      /** 进度百分比 0-100 */
+      progress: number;
+      /** 已扫描行数 */
+      rowsFetched: number;
+      /** 执行耗时（毫秒） */
+      elapsedMs: number;
+      /** 结果总行数 */
+      resultRowCount: number;
+      /** 结果是否被截断（仅预览截断，CSV 完整） */
+      resultIsTruncated: boolean;
+      /** 结果预览快照 */
+      resultSnapshot: BiQueryTaskSnapshot | null;
+      /** 错误信息 */
+      errorMessage: string | null;
+      /** 开始执行时间 */
+      startedAt: string | null;
+      /** 完成时间 */
+      finishedAt: string | null;
+      /** 提交来源：manual / auto_transfer */
+      source: 'manual' | 'auto_transfer';
+      /** 创建时间 */
+      createdAt: string;
+      /** SQL 全文（仅详情接口返回） */
+      sqlText?: string;
+    }
+
+    /** 异步查询任务列表查询参数 */
+    interface BiQueryTaskSearchParams {
+      current: number;
+      size: number;
+      name?: string;
+      status?: BiQueryTaskStatus;
+      datasourceId?: string;
+    }
+
+    /** 异步查询任务列表分页响应 */
+    interface BiQueryTaskList {
+      records: BiQueryTask[];
+      total: number;
+    }
+
+    /** 提交异步查询请求 */
+    interface BiAsyncRunPayload {
+      sql: string;
+      datasourceId: string;
+      name?: string;
+    }
+
+    /** 提交异步查询响应 */
+    interface BiAsyncRunResult {
+      taskId: string;
+      status: string;
+    }
+
+    /** 异步任务结果预览响应 */
+    interface BiQueryTaskResult {
+      resultSnapshot: BiQueryTaskSnapshot | null;
+      resultRowCount: number;
+      resultIsTruncated: boolean;
+    }
+
+    /** 智能切换响应（/sql/run 软超时触发） */
+    interface BiSqlRunTransferredResult {
+      transferred: true;
+      taskId: string;
+      message: string;
+      datasourceId: string;
+      sqlText: string;
+    }
+
+    /** /sql/run 返回的联合结果：同步成功 / 软超时转异步 */
+    type BiSqlRunResult = SqlExecutionResult | BiSqlRunTransferredResult;
   }
 }

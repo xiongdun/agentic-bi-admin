@@ -11,6 +11,8 @@ const biLocale = {
     bi_audit: '审计日志',
     bi_charts: '图表库',
     'bi_chart-detail': '图表详情',
+    'bi_async-query-tasks': '查询任务',
+    'bi_async-query-detail': '任务详情',
     bi_share: '分享图表'
   },
   page: {
@@ -303,6 +305,53 @@ const biLocale = {
         searchPlaceholder: '搜索图表名称',
         filterByTag: '按标签筛选',
         filterByDatasource: '按数据源筛选'
+      },
+      'async-query-tasks': {
+        title: '查询任务',
+        searchNamePlaceholder: '按名称搜索',
+        statusPlaceholder: '状态筛选',
+        transferredMessage: '查询超时，已转为异步任务，正在跳转详情页...',
+        cancelConfirm: '确认取消该任务？',
+        deleteConfirm: '确认删除该任务？',
+        sourceManual: '手动提交',
+        sourceAutoTransfer: '超时转异步',
+        columns: {
+          name: '任务名',
+          status: '状态',
+          progress: '进度',
+          rowsFetched: '已扫描行数',
+          elapsedMs: '耗时(ms)',
+          source: '来源',
+          createdAt: '创建时间',
+          actions: '操作'
+        },
+        status: {
+          pending: '等待中',
+          running: '进行中',
+          success: '已完成',
+          failed: '失败',
+          cancelled: '已取消'
+        },
+        actions: {
+          view: '查看',
+          cancel: '取消',
+          cancelSuccess: '取消成功',
+          download: '下载',
+          delete: '删除'
+        },
+        detail: {
+          title: '任务详情',
+          back: '返回列表',
+          cancel: '取消任务',
+          download: '下载 CSV',
+          sqlLabel: 'SQL',
+          previewTitle: '结果预览',
+          previewSummary: '共 {total} 行，预览 {preview} 行{truncated}',
+          truncated: '，已截断',
+          resultRowCount: '结果总行数',
+          startedAt: '开始时间',
+          finishedAt: '完成时间'
+        }
       }
     }
   }

@@ -1,16 +1,24 @@
 """查询配额限制 — 行数 / 超时 / 熔断。
 
-默认值从 BI_QUERY_* 环境变量读取。
+熔断改造（spec §6.2）：原进程内字典在多 worker 下失效，改为 Redis ZSet。
+- ``bi:quota:failures:{scope}`` ZSet，score=时间戳，member=时间戳
+- 窗口内失败次数 >= threshold 触发熔断
+
+scope 形如 ``user:{user_id}`` 或 ``datasource:{datasource_id}``。
 """
 
 from __future__ import annotations
 
 import os
 import time
-from collections import defaultdict, deque
 from dataclasses import dataclass
 
+from redis.asyncio import Redis
+
 from app.core.exceptions import BizError
+
+# 错误码 4102 = 查询熔断
+_BREAKER_OPEN_CODE = 4102
 
 
 @dataclass
@@ -23,51 +31,42 @@ class QuotaConfig:
     breaker_window_seconds: int = 60
 
 
-# 默认配额（模块加载时读取环境变量）
 _default_config = QuotaConfig()
 
-# 用户失败计数（用于熔断）—— 进程内字典，按 user_id 维护
-# {user_id: deque[(timestamp,)]}
-_failure_records: dict[int, deque[float]] = defaultdict(deque)
+
+def _failures_key(scope: str) -> str:
+    return f"bi:quota:failures:{scope}"
 
 
-def check_quota(user_id: int, config: QuotaConfig | None = None) -> None:
-    """检查用户是否触发熔断。
-
-    Args:
-        user_id: 用户 ID
-        config: 配额配置（None 用默认）
-
-    Raises:
-        BizError(4102): 触发熔断
-    """
+async def record_failure(scope: str, redis: Redis, config: QuotaConfig | None = None) -> None:
+    """记录失败到 Redis ZSet。"""
     cfg = config or _default_config
     now = time.time()
-    window_start = now - cfg.breaker_window_seconds
+    key = _failures_key(scope)
+    pipe = redis.pipeline()
+    pipe.zadd(key, {str(now): now})
+    # 清理窗口外的旧记录
+    pipe.zremrangebyscore(key, 0, now - cfg.breaker_window_seconds)
+    pipe.expire(key, cfg.breaker_window_seconds)
+    await pipe.execute()
 
-    # 清理过期记录
-    records = _failure_records[user_id]
-    while records and records[0] < window_start:
-        records.popleft()
 
-    # 检查熔断
-    if len(records) >= cfg.breaker_threshold:
+async def record_success(scope: str, redis: Redis) -> None:
+    """成功时清空失败计数。"""
+    await redis.delete(_failures_key(scope))
+
+
+async def check_quota(scope: str, redis: Redis, config: QuotaConfig | None = None) -> None:
+    """检查熔断。超阈值抛 BizError(4102)。"""
+    cfg = config or _default_config
+    now = time.time()
+    key = _failures_key(scope)
+    count = await redis.zcount(key, now - cfg.breaker_window_seconds, now)
+    if count >= cfg.breaker_threshold:
         raise BizError(
-            4102,
-            f"查询熔断：用户 {user_id} 在 {cfg.breaker_window_seconds} 秒内失败 {len(records)} 次，超过阈值 {cfg.breaker_threshold}",
+            _BREAKER_OPEN_CODE,
+            f"查询熔断：scope={scope} 在 {cfg.breaker_window_seconds} 秒内失败 {count} 次，超过阈值 {cfg.breaker_threshold}",
         )
-
-
-def record_failure(user_id: int, config: QuotaConfig | None = None) -> None:
-    """记录用户查询失败（用于熔断统计）。"""
-    _ = config  # 保留参数以与其它配额函数 API 一致；失败计数不依赖 config
-    _failure_records[user_id].append(time.time())
-
-
-def record_success(user_id: int) -> None:
-    """记录用户查询成功（清空失败计数）。"""
-    if user_id in _failure_records:
-        _failure_records[user_id].clear()
 
 
 def check_row_limit(row_count: int, config: QuotaConfig | None = None) -> None:
@@ -87,9 +86,11 @@ def get_timeout(config: QuotaConfig | None = None) -> int:
     return cfg.timeout_seconds
 
 
-def reset_failures(user_id: int | None = None) -> None:
-    """重置失败计数（测试或管理用途）。"""
-    if user_id is None:
-        _failure_records.clear()
+async def reset_failures(scope: str | None, redis: Redis) -> None:
+    """重置失败计数（测试或管理用途）。scope=None 时清所有已知 scope。"""
+    if scope is None:
+        # 扫描 bi:quota:failures:* —— 测试场景用 fakeredis，生产应避免
+        async for key in redis.scan_iter(match="bi:quota:failures:*"):
+            await redis.delete(key)
     else:
-        _failure_records.pop(user_id, None)
+        await redis.delete(_failures_key(scope))

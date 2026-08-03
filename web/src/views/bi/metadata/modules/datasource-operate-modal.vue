@@ -214,7 +214,7 @@ watch(visible, () => {
             </NRadioGroup>
           </NFormItemGi>
           <NFormItemGi span="24" label="Extra Params" path="extraParams">
-            <NInput v-model:value="extraParamsText" type="textarea" :rows="3" placeholder="{&quot;sslmode&quot;: &quot;prefer&quot;}" />
+            <NInput v-model:value="extraParamsText" type="textarea" :rows="3" placeholder='{"sslmode": "prefer"}' />
           </NFormItemGi>
         </NGrid>
       </NForm>
