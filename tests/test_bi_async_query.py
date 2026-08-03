@@ -50,3 +50,61 @@ class TestQueue:
         await redis.delete("bi:async_query:queue")
         result = await dequeue(redis, timeout=1)
         assert result is None
+
+
+# ===================== state =====================
+
+
+class TestState:
+    async def test_init_and_get_state(self, app):
+        from app.business.bi.async_query.state import get_state, init_state
+
+        redis = app.state.redis
+        await init_state(9999, redis, status="pending")
+        state = await get_state(9999, redis)
+        assert state["status"] == "pending"
+        assert state["progress"] == 0
+        assert state["rows_fetched"] == 0
+        assert state["elapsed_ms"] == 0
+
+    async def test_update_progress(self, app):
+        from app.business.bi.async_query.state import get_state, init_state, update_progress
+
+        redis = app.state.redis
+        await init_state(8888, redis)
+        await update_progress(8888, redis, progress=45, rows_fetched=4500, elapsed_ms=3200)
+        state = await get_state(8888, redis)
+        assert state["progress"] == 45
+        assert state["rows_fetched"] == 4500
+        assert state["elapsed_ms"] == 3200
+
+    async def test_update_status_with_error(self, app):
+        from app.business.bi.async_query.state import get_state, init_state, update_status
+
+        redis = app.state.redis
+        await init_state(7777, redis)
+        await update_status(7777, "failed", redis, error_message="timeout")
+        state = await get_state(7777, redis)
+        assert state["status"] == "failed"
+        assert state["error_message"] == "timeout"
+
+    async def test_check_cancel_default_false(self, app):
+        from app.business.bi.async_query.state import check_cancel
+
+        redis = app.state.redis
+        await redis.delete("bi:async_query:task:6666:cancel")
+        assert await check_cancel(6666, redis) is False
+
+    async def test_request_cancel_sets_flag(self, app):
+        from app.business.bi.async_query.state import check_cancel, request_cancel
+
+        redis = app.state.redis
+        await request_cancel(5555, redis)
+        assert await check_cancel(5555, redis) is True
+
+    async def test_get_state_missing_returns_empty(self, app):
+        from app.business.bi.async_query.state import get_state
+
+        redis = app.state.redis
+        await redis.delete("bi:async_query:task:12345")
+        assert await get_state(12345, redis) == {}
