@@ -111,3 +111,15 @@ class Code:
     # 42xx — BI 图表模块
     BI_CHART_NOT_FOUND = "4200"  # 图表不存在
     BI_DATASOURCE_UNAVAILABLE = "4201"  # 数据源不可用（刷新图表时）
+
+    # 41xx — BI 异步大查询
+    BI_ASYNC_QUERY_NOT_ENABLED = "4110"  # 异步大查询功能未开启
+    BI_ASYNC_QUERY_USER_CONCURRENCY_EXCEEDED = "4111"  # 用户并发任务数超限
+    BI_ASYNC_QUERY_GLOBAL_CONCURRENCY_EXCEEDED = "4112"  # 全局并发任务数超限
+    BI_ASYNC_QUERY_TASK_NOT_FOUND = "4113"  # 任务不存在
+    BI_ASYNC_QUERY_TASK_NOT_CANCELLABLE = "4114"  # 任务当前状态不可取消
+    BI_ASYNC_QUERY_RESULT_FILE_MISSING = "4115"  # 结果文件不存在或已清理
+    BI_ASYNC_QUERY_TRANSFER_FAILED = "4116"  # 同步转异步失败
+    BI_ASYNC_QUERY_CSV_WRITE_FAILED = "4117"  # CSV 写入失败
+    BI_ASYNC_QUERY_TASK_TIMEOUT = "4118"  # 异步查询执行超时
+    BI_ASYNC_QUERY_CANCELLED = "4119"  # 任务已取消
