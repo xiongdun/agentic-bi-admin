@@ -7,8 +7,8 @@ from app.business.bi.async_query.state import get_runtime_redis
 from app.business.bi.config import BIZ_SETTINGS
 from app.business.bi.models import BiMaskingRule
 from app.business.bi.sandbox.masking import mask_columns
-from app.core.enums import StatusType
 from app.core.log import log
+from app.utils import StatusType
 
 _CACHE_KEY = "bi:masking:rules:enabled"
 

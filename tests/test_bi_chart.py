@@ -38,6 +38,16 @@ from app.core.sqids import encode_id
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
+
+@pytest.fixture(autouse=True)
+async def _setup_runtime_redis(app):
+    """注入 runtime redis（refresh_chart 经 apply_masking 需要 get_runtime_redis）。"""
+    from app.business.bi.async_query import state
+
+    state.set_runtime_redis(app.state.redis)
+    yield
+
+
 PREFIX = "/api/v1/business/bi"
 
 

@@ -8,6 +8,7 @@ from typing import Any
 from app.business.bi.agent.state import AgentState, StepTrace
 from app.business.bi.models import BiDatasource
 from app.business.bi.sandbox.executor import execute_sql
+from app.business.bi.services_masking import apply_masking
 
 
 async def executor_node(state: AgentState) -> dict[str, Any]:
@@ -50,8 +51,11 @@ async def executor_node(state: AgentState) -> dict[str, Any]:
             user_id=user_id,
         )
 
+        # 对结果应用脱敏规则（智能对话路径，用户可见）
+        masked_rows = await apply_masking(result.rows)
+
         sql_result = {
-            "rows": result.rows,
+            "rows": masked_rows,
             "columns": result.columns,
             "elapsedMs": result.elapsed_ms,
             "rowCount": result.row_count,

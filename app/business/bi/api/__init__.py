@@ -29,8 +29,10 @@ from app.business.bi.api.chat import router as chat_router
 from app.business.bi.api.dashboard import router as dashboard_router
 from app.business.bi.api.datasource import router as datasource_router
 from app.business.bi.api.llm import router as llm_router
+from app.business.bi.api.masking import router as masking_router
 from app.business.bi.api.metadata import router as metadata_router
 from app.business.bi.api.metric import router as metric_router
+from app.business.bi.api.quota import router as quota_router
 from app.business.bi.api.sql_workbench import router as sql_workbench_router
 
 router = APIRouter()
@@ -44,6 +46,8 @@ router.include_router(audit_router)
 router.include_router(chart_router)
 router.include_router(async_query_router)
 router.include_router(dashboard_router)
+router.include_router(masking_router)
+router.include_router(quota_router)
 
 # 公开路由（免登录查看分享图表）—— 由 module.py 单独挂载到 auth="public" 的 BusinessRouter
 public_router = APIRouter()

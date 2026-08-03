@@ -14,6 +14,7 @@ from .models import BiChart, BiDatasource
 from .sandbox.executor import execute_sql, test_connection
 from .sandbox.tenant import inject_tenant_filter
 from .sandbox.whitelist import validate_sql
+from .services_masking import apply_masking
 
 
 async def create_chart(schema, tenant_id: int, user_id: int) -> BiChart:
@@ -98,6 +99,9 @@ async def refresh_chart(chart_id: int, tenant_id: int, user_id: int) -> BiChart:
         raise BizError(Code.BI_CHART_NOT_FOUND, "图表不存在")
 
     snapshot = await _rerun_chart_sql(chart, user_id=user_id)
+    # 对快照 rows 应用脱敏规则（图表刷新路径，用户可见）
+    if snapshot.get("rows"):
+        snapshot["rows"] = await apply_masking(snapshot["rows"])
     chart.result_snapshot = snapshot
     chart.snapshot_at = datetime.now()
     await chart.save(update_fields=["result_snapshot", "snapshot_at", "updated_at"])

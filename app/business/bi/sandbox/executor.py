@@ -119,12 +119,17 @@ async def execute_sql(
     """
     scope = f"user:{user_id}"
 
+    # 加载配额配置（链式查找：datasource > user > global > env 默认）
+    from app.business.bi.services_quota import load_quota_config
+
+    cfg = await load_quota_config("user", user_id)
+
     # 配额检查（多 worker 共享 Redis ZSet）
     if redis is not None:
-        await check_quota(scope, redis)
+        await check_quota(scope, redis, config=cfg)
 
     engine = await get_engine(datasource)
-    timeout_seconds = timeout or get_timeout()
+    timeout_seconds = timeout or get_timeout(cfg)
 
     start = time.time()
     try:
@@ -139,14 +144,14 @@ async def execute_sql(
             # 获取行数据
             rows: list[dict[str, Any]] = []
             if result.returns_rows:
-                fetched = result.fetchmany(max_rows or 10000)
+                fetched = result.fetchmany(max_rows or cfg.max_rows)
                 for row in fetched:
                     rows.append(dict(row._mapping))
 
         elapsed_ms = int((time.time() - start) * 1000)
 
         # 行数检查
-        check_row_limit(len(rows))
+        check_row_limit(len(rows), config=cfg)
 
         # 记录成功
         if redis is not None:
@@ -162,11 +167,11 @@ async def execute_sql(
     except BizError:
         # 配额 / 行数错误直接抛出
         if redis is not None:
-            await record_failure(scope, redis)
+            await record_failure(scope, redis, config=cfg)
         raise
     except Exception as e:
         if redis is not None:
-            await record_failure(scope, redis)
+            await record_failure(scope, redis, config=cfg)
         elapsed_ms = int((time.time() - start) * 1000)
         raise BizError(4104, f"SQL 执行失败: {e}") from e
 
