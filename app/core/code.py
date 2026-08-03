@@ -124,3 +124,10 @@ class Code:
     BI_ASYNC_QUERY_CSV_WRITE_FAILED = "4117"  # CSV 写入失败
     BI_ASYNC_QUERY_TASK_TIMEOUT = "4118"  # 异步查询执行超时
     BI_ASYNC_QUERY_CANCELLED = "4119"  # 任务已取消
+
+    # 41xx — BI 安全配置（脱敏 / 配额）
+    BI_QUERY_BREAKER_OPEN = "4102"  # 查询熔断（sandbox 已用，登记进 Code）
+    BI_QUERY_ROW_LIMIT = "4103"  # 行数超限（sandbox 已用，登记进 Code）
+    BI_QUERY_EXEC_FAILED = "4104"  # SQL 执行失败（sandbox 已用，登记进 Code）
+    BI_MASKING_RULE_NOT_FOUND = "4120"  # 脱敏规则不存在
+    BI_QUOTA_CONFIG_NOT_FOUND = "4121"  # 配额配置不存在

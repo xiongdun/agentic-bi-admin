@@ -66,6 +66,10 @@ class BusinessSettings(BaseSettings):
     BI_DASHBOARD_MAX_ITEMS: int = 30
     BI_DASHBOARD_REFRESH_TIMEOUT: int = 25
 
+    # ==================== Security Config ====================
+    BI_MASKING_CACHE_TTL: int = 60  # 脱敏规则缓存 TTL（秒）
+    BI_QUOTA_CACHE_TTL: int = 60  # 配额配置缓存 TTL（秒）
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
