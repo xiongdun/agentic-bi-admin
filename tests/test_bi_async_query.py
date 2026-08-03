@@ -108,3 +108,67 @@ class TestState:
         redis = app.state.redis
         await redis.delete("bi:async_query:task:12345")
         assert await get_state(12345, redis) == {}
+
+
+# ===================== storage =====================
+
+
+class TestStorage:
+    async def test_write_preview_under_limit(self):
+        from app.business.bi.async_query.storage import write_preview
+
+        columns = ["a", "b"]
+        rows = [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]
+        result = write_preview(columns, rows, elapsed_ms=10)
+        assert result["rowCount"] == 2
+        assert result["isTruncated"] is False
+        assert result["rows"] == rows
+
+    async def test_write_preview_truncates(self, monkeypatch):
+        from app.business.bi.async_query import storage as storage_mod
+        from app.business.bi.config import BIZ_SETTINGS
+
+        monkeypatch.setattr(BIZ_SETTINGS, "BI_ASYNC_QUERY_PREVIEW_ROWS", 3)
+        rows = [{"a": i} for i in range(10)]
+        result = storage_mod.write_preview(["a"], rows, elapsed_ms=5)
+        assert result["rowCount"] == 3
+        assert result["isTruncated"] is True
+        assert len(result["rows"]) == 3
+
+    async def test_resolve_csv_path_rejects_traversal(self):
+        from app.business.bi.async_query.storage import resolve_csv_path
+
+        with pytest.raises(ValueError):
+            resolve_csv_path("../../etc/passwd")
+        with pytest.raises(ValueError):
+            resolve_csv_path("sub/dir/file.csv")
+        with pytest.raises(ValueError):
+            resolve_csv_path("")
+
+    async def test_resolve_csv_path_accepts_valid(self):
+        from app.business.bi.async_query.storage import resolve_csv_path
+
+        path = resolve_csv_path("12345.csv")
+        assert path.name == "12345.csv"
+        assert path.suffix == ".csv"
+
+    async def test_write_and_append_csv(self, tmp_path, monkeypatch):
+        from app.business.bi.async_query.storage import (
+            append_csv_rows,
+            read_csv_stream,
+            write_csv_header,
+        )
+        from app.business.bi.config import BIZ_SETTINGS
+
+        monkeypatch.setattr(BIZ_SETTINGS, "BI_ASYNC_QUERY_CSV_DIR", str(tmp_path))
+
+        file_path = tmp_path / "99999.csv"
+        write_csv_header(file_path, ["a", "b"])
+        append_csv_rows(file_path, ["a", "b"], [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}])
+        append_csv_rows(file_path, ["a", "b"], [{"a": 3, "b": "z"}])
+
+        content = b"".join(read_csv_stream(file_path))
+        # BOM + header + 3 rows
+        assert content.startswith(b"\xef\xbb\xbfa,b\r\n")
+        assert b"1,x" in content
+        assert b"3,z" in content
