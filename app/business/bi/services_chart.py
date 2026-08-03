@@ -55,6 +55,39 @@ async def create_chart(schema, tenant_id: int, user_id: int) -> BiChart:
     return chart
 
 
+async def _rerun_chart_sql(chart: BiChart, user_id: int | None = None) -> dict:
+    """重跑 chart 的 SQL，返回截断后的快照。
+
+    BiChart.refresh_chart 与 BiDashboard.refresh_dashboard 共用本函数。
+    抛出异常时由调用方决定降级策略。
+
+    Args:
+        chart: BiChart 实例（需已加载 datasource 关系）
+        user_id: 执行 SQL 用的 user_id（None 时用 chart.tenant_id）
+    Returns:
+        {columns, rows, rowCount, elapsedMs, isTruncated?}
+    """
+    datasource = await chart.datasource
+    ok, err, _ = await test_connection(datasource)
+    if not ok:
+        raise BizError(Code.BI_DATASOURCE_UNAVAILABLE, f"数据源不可用：{err}")
+
+    # 完整校验链：白名单（含自动 LIMIT）→ 行级注入 → 执行
+    validation = validate_sql(chart.sql_text, datasource.db_type)
+    sql = inject_tenant_filter(validation.sql, tenant_id=chart.tenant_id, dialect=datasource.db_type)
+    result = await execute_sql(sql=sql, datasource=datasource, user_id=user_id if user_id is not None else chart.tenant_id)
+
+    return _truncate_snapshot(
+        {
+            "columns": result.columns,
+            "rows": result.rows,
+            "rowCount": result.row_count,
+            "elapsedMs": result.elapsed_ms,
+        },
+        BIZ_SETTINGS.BI_CHART_SNAPSHOT_MAX_ROWS,
+    )
+
+
 async def refresh_chart(chart_id: int, tenant_id: int, user_id: int) -> BiChart:
     """重跑 SQL 刷新结果快照。
 
@@ -64,26 +97,7 @@ async def refresh_chart(chart_id: int, tenant_id: int, user_id: int) -> BiChart:
     if not chart:
         raise BizError(Code.BI_CHART_NOT_FOUND, "图表不存在")
 
-    datasource = await chart.datasource
-    ok, err, _ = await test_connection(datasource)
-    if not ok:
-        raise BizError(Code.BI_DATASOURCE_UNAVAILABLE, f"数据源不可用：{err}")
-
-    # 完整校验链：白名单（含自动 LIMIT）→ 行级注入 → 执行
-    validation = validate_sql(chart.sql_text, datasource.db_type)
-    sql = inject_tenant_filter(validation.sql, tenant_id=tenant_id, dialect=datasource.db_type)
-    result = await execute_sql(sql=sql, datasource=datasource, user_id=user_id)
-
-    # 覆盖快照
-    snapshot = _truncate_snapshot(
-        {
-            "columns": result.columns,
-            "rows": result.rows,
-            "rowCount": result.row_count,
-            "elapsedMs": result.elapsed_ms,
-        },
-        BIZ_SETTINGS.BI_CHART_SNAPSHOT_MAX_ROWS,
-    )
+    snapshot = await _rerun_chart_sql(chart, user_id=user_id)
     chart.result_snapshot = snapshot
     chart.snapshot_at = datetime.now()
     await chart.save(update_fields=["result_snapshot", "snapshot_at", "updated_at"])

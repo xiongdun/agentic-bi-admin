@@ -153,6 +153,30 @@ BI_MENU_CHILDREN = [
         "hide_in_menu": True,
         "active_menu": "bi_async-query-tasks",
     },
+    {
+        "menu_name": "仪表盘",
+        "route_name": "bi_dashboards",
+        "route_path": "/bi/dashboards",
+        "component": "view.bi_dashboards",
+        "icon": "mdi:view-dashboard-outline",
+        "order": 9,
+        "buttons": [
+            {"button_code": "B_BI_DASHBOARD_CREATE", "button_desc": "创建仪表盘"},
+            {"button_code": "B_BI_DASHBOARD_VIEW", "button_desc": "查看仪表盘"},
+            {"button_code": "B_BI_DASHBOARD_EDIT", "button_desc": "编辑仪表盘"},
+            {"button_code": "B_BI_DASHBOARD_DELETE", "button_desc": "删除仪表盘"},
+        ],
+    },
+    {
+        "menu_name": "仪表盘详情",
+        "route_name": "bi_dashboard-detail",
+        "route_path": "/bi/dashboard-detail/:id",
+        "component": "view.bi_dashboard-detail",
+        "icon": "mdi:view-dashboard",
+        "order": 99,
+        "hide_in_menu": True,
+        "active_menu": "bi_dashboards",
+    },
 ]
 
 # BI 全量按钮码聚合，便于角色授权引用。
@@ -188,6 +212,10 @@ BI_ALL_BUTTONS = [
     "B_BI_SQL_TASK_CANCEL",
     "B_BI_SQL_TASK_DELETE",
     "B_BI_SQL_TASK_DOWNLOAD",
+    "B_BI_DASHBOARD_CREATE",
+    "B_BI_DASHBOARD_VIEW",
+    "B_BI_DASHBOARD_EDIT",
+    "B_BI_DASHBOARD_DELETE",
 ]
 
 # BI 全量菜单 route_name（含顶级与子菜单）。
@@ -205,6 +233,8 @@ BI_ALL_MENUS = [
     "bi_chart-detail",
     "bi_async-query-tasks",
     "bi_async-query-detail",
+    "bi_dashboards",
+    "bi_dashboard-detail",
 ]
 
 # 数据分析师可见菜单与按钮码子集。
@@ -218,6 +248,8 @@ BI_ANALYST_MENUS = [
     "bi_chart-detail",
     "bi_async-query-tasks",
     "bi_async-query-detail",
+    "bi_dashboards",
+    "bi_dashboard-detail",
 ]
 BI_ANALYST_BUTTONS = [
     "B_BI_CHAT_NEW",
@@ -235,6 +267,10 @@ BI_ANALYST_BUTTONS = [
     "B_BI_SQL_TASK_CANCEL",
     "B_BI_SQL_TASK_DELETE",
     "B_BI_SQL_TASK_DOWNLOAD",
+    "B_BI_DASHBOARD_CREATE",
+    "B_BI_DASHBOARD_VIEW",
+    "B_BI_DASHBOARD_EDIT",
+    "B_BI_DASHBOARD_DELETE",
 ]
 
 # apis 字段：BI API 路由的 route_key（``APIRoute.name``）列表。
@@ -318,6 +354,14 @@ BI_ADMIN_APIS: list[str] = [
     "bi.tasks.cancel",
     "bi.tasks.delete",
     "bi.tasks.download",
+    # dashboard（CRUD + refresh + preview）
+    "bi.dashboards.create",
+    "bi.dashboards.list",
+    "bi.dashboards.get",
+    "bi.dashboards.update",
+    "bi.dashboards.delete",
+    "bi.dashboards.refresh",
+    "bi.dashboards.preview",
 ]
 
 # 数据分析师：仅对话 / SQL 工作台 / 指标查看相关路由
@@ -365,6 +409,14 @@ BI_ANALYST_APIS: list[str] = [
     "bi.tasks.cancel",
     "bi.tasks.delete",
     "bi.tasks.download",
+    # dashboard（CRUD + refresh + preview — 数据分析师可创建/管理自己的仪表盘）
+    "bi.dashboards.create",
+    "bi.dashboards.list",
+    "bi.dashboards.get",
+    "bi.dashboards.update",
+    "bi.dashboards.delete",
+    "bi.dashboards.refresh",
+    "bi.dashboards.preview",
 ]
 
 BI_ROLE_SEEDS = [

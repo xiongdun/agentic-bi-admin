@@ -13,6 +13,8 @@ const biLocale = {
     'bi_chart-detail': '图表详情',
     'bi_async-query-tasks': '查询任务',
     'bi_async-query-detail': '任务详情',
+    bi_dashboards: '仪表盘',
+    'bi_dashboard-detail': '仪表盘详情',
     bi_share: '分享图表'
   },
   page: {
@@ -352,6 +354,37 @@ const biLocale = {
           startedAt: '开始时间',
           finishedAt: '完成时间'
         }
+      },
+      dashboard: {
+        title: '仪表盘',
+        create: '新建仪表盘',
+        name: '名称',
+        description: '说明',
+        itemCount: '图表数量',
+        edit: '编辑',
+        save: '保存',
+        cancel: '取消',
+        refresh: '刷新',
+        refreshAll: '刷新全部',
+        addChart: '添加图表',
+        removeChart: '移除',
+        chartDeleted: '图表已删除，请编辑移除',
+        refreshFailed: '刷新失败',
+        refreshSuccess: '刷新完成',
+        empty: '暂无仪表盘，点击新建创建',
+        emptyLayout: '画布为空，点击左侧图表添加',
+        searchPlaceholder: '搜索仪表盘名称',
+        namePlaceholder: '请输入仪表盘名称',
+        descPlaceholder: '请输入说明（可选）',
+        confirmDelete: '确认删除该仪表盘？',
+        saveSuccess: '保存成功',
+        createSuccess: '创建成功，请添加图表',
+        totalElapsed: '总耗时 {ms}ms',
+        backToList: '返回列表',
+        exitEdit: '退出编辑',
+        statusSuccess: '成功',
+        statusFailed: '失败',
+        statusDeleted: '已删除'
       }
     }
   }

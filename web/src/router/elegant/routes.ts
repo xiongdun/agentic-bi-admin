@@ -151,6 +151,26 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'bi_dashboards',
+        path: '/bi/dashboards',
+        component: 'view.bi_dashboards',
+        meta: {
+          title: 'bi_dashboards',
+          i18nKey: 'route.bi_dashboards'
+        },
+        children: [
+          {
+            name: 'bi_dashboards_detail',
+            path: '/bi/dashboards/detail/:id',
+            component: 'view.bi_dashboards_detail',
+            meta: {
+              title: 'bi_dashboards_detail',
+              i18nKey: 'route.bi_dashboards_detail'
+            }
+          }
+        ]
+      },
+      {
         name: 'bi_metadata',
         path: '/bi/metadata',
         component: 'view.bi_metadata',

@@ -1,12 +1,11 @@
 <script setup lang="tsx">
-import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchBiDatasourceList } from '@/service/api/bi';
 import { fetchBiChartList, fetchBiChartTags, fetchDeleteBiChart } from '@/service/api/bi-chart';
 import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
-import { useEcharts, type ECOption } from '@/hooks/common/echarts';
-import { buildChartOption, type ChartType } from '../shared/chart-config';
+import ChartThumbnail from '../shared/chart-thumbnail.vue';
 
 defineOptions({ name: 'BiCharts' });
 
@@ -126,32 +125,7 @@ function formatSnapshotAt(iso: string): string {
 }
 
 // ---- 内联图表缩略图组件 ----
-const ChartThumbnail = defineComponent({
-  name: 'BiChartThumbnail',
-  props: {
-    chart: { type: Object as () => Api.Bi.BiChart, required: true }
-  },
-  setup(p) {
-    const option = computed<ECOption>(() => {
-      const snap = p.chart.resultSnapshot;
-      if (!snap?.rows?.length || !p.chart.xCol || !p.chart.yCol) return {} as ECOption;
-      return buildChartOption(
-        { columns: snap.columns, rows: snap.rows },
-        (p.chart.chartType as ChartType) || 'bar',
-        p.chart.xCol,
-        p.chart.yCol
-      );
-    });
-    const { domRef } = useEcharts<ECOption>(() => option.value, {
-      onRender: instance => {
-        if (Object.keys(option.value).length) {
-          instance.setOption({ ...option.value, backgroundColor: 'transparent' });
-        }
-      }
-    });
-    return () => h('div', { ref: domRef, class: 'h-160px w-full' });
-  }
-});
+// 已抽出为 shared/chart-thumbnail.vue，列表与仪表盘详情页共用。
 
 onMounted(() => {
   loadDatasources();
@@ -240,7 +214,14 @@ onMounted(() => {
           >
             <!-- 缩略图 -->
             <div class="chart-thumb-wrapper">
-              <ChartThumbnail v-if="item.resultSnapshot?.rows?.length" :chart="item" />
+              <ChartThumbnail
+                v-if="item.resultSnapshot?.rows?.length"
+                :snapshot="item.resultSnapshot"
+                :chart-type="item.chartType"
+                :x-col="item.xCol"
+                :y-col="item.yCol"
+                height-class="h-160px"
+              />
               <NEmpty v-else size="small" :description="$t('common.noData')" class="py-20px" />
             </div>
             <!-- 信息 -->

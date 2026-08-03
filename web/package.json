@@ -75,6 +75,7 @@
     "dhtmlx-gantt": "9.1.2",
     "dompurify": "3.3.2",
     "echarts": "6.0.0",
+    "gridstack": "^13.0.2",
     "jsbarcode": "3.12.3",
     "json5": "2.2.3",
     "marked": "^18.0.7",

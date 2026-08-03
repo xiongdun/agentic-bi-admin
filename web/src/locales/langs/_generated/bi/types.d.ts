@@ -347,6 +347,37 @@ declare namespace App {
             finishedAt: string;
           };
         };
+        dashboard: {
+          title: string;
+          create: string;
+          name: string;
+          description: string;
+          itemCount: string;
+          edit: string;
+          save: string;
+          cancel: string;
+          refresh: string;
+          refreshAll: string;
+          addChart: string;
+          removeChart: string;
+          chartDeleted: string;
+          refreshFailed: string;
+          refreshSuccess: string;
+          empty: string;
+          emptyLayout: string;
+          searchPlaceholder: string;
+          namePlaceholder: string;
+          descPlaceholder: string;
+          confirmDelete: string;
+          saveSuccess: string;
+          createSuccess: string;
+          totalElapsed: string;
+          backToList: string;
+          exitEdit: string;
+          statusSuccess: string;
+          statusFailed: string;
+          statusDeleted: string;
+        };
       };
     }
   }

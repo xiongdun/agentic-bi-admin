@@ -192,6 +192,8 @@ const routeMap: RouteMap = {
   "bi_chart-detail": "/bi/chart-detail/:id",
   "bi_charts": "/bi/charts",
   "bi_chat": "/bi/chat",
+  "bi_dashboards": "/bi/dashboards",
+  "bi_dashboards_detail": "/bi/dashboards/detail/:id",
   "bi_metadata": "/bi/metadata",
   "bi_metadata-detail": "/bi/metadata-detail/:id",
   "bi_metrics": "/bi/metrics",

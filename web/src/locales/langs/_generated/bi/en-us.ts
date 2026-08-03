@@ -13,6 +13,8 @@ const biLocale = {
     'bi_chart-detail': 'Chart Detail',
     'bi_async-query-tasks': 'Query Tasks',
     'bi_async-query-detail': 'Task Detail',
+    bi_dashboards: 'Dashboards',
+    'bi_dashboard-detail': 'Dashboard Detail',
     bi_share: 'Shared Chart'
   },
   page: {
@@ -352,6 +354,37 @@ const biLocale = {
           startedAt: 'Started At',
           finishedAt: 'Finished At'
         }
+      },
+      dashboard: {
+        title: 'Dashboard',
+        create: 'New Dashboard',
+        name: 'Name',
+        description: 'Description',
+        itemCount: 'Charts',
+        edit: 'Edit',
+        save: 'Save',
+        cancel: 'Cancel',
+        refresh: 'Refresh',
+        refreshAll: 'Refresh All',
+        addChart: 'Add Chart',
+        removeChart: 'Remove',
+        chartDeleted: 'Chart deleted, please edit to remove',
+        refreshFailed: 'Refresh Failed',
+        refreshSuccess: 'Refreshed',
+        empty: 'No dashboards, click to create',
+        emptyLayout: 'Canvas empty, click charts on left to add',
+        searchPlaceholder: 'Search dashboard name',
+        namePlaceholder: 'Enter dashboard name',
+        descPlaceholder: 'Enter description (optional)',
+        confirmDelete: 'Delete this dashboard?',
+        saveSuccess: 'Saved',
+        createSuccess: 'Created, please add charts',
+        totalElapsed: 'Total {ms}ms',
+        backToList: 'Back to List',
+        exitEdit: 'Exit Edit',
+        statusSuccess: 'Success',
+        statusFailed: 'Failed',
+        statusDeleted: 'Deleted'
       }
     }
   }

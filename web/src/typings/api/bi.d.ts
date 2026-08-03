@@ -799,5 +799,120 @@ declare namespace Api {
 
     /** /sql/run 返回的联合结果：同步成功 / 软超时转异步 */
     type BiSqlRunResult = SqlExecutionResult | BiSqlRunTransferredResult;
+
+    // ============================================================
+    // Dashboard（仪表盘）
+    // ============================================================
+
+    /** Dashboard layout 单元素（与 BiChart 关联，存 SQID 编码字符串） */
+    interface BiDashboardItem {
+      /** BiChart 的 SQID 编码 */
+      chartId: string;
+      /** 列位置 0-11 */
+      x: number;
+      /** 行位置 0-N */
+      y: number;
+      /** 宽度 1-12 */
+      w: number;
+      /** 高度 1-6 */
+      h: number;
+    }
+
+    /** Dashboard layout 结构 */
+    interface BiDashboardLayout {
+      items: BiDashboardItem[];
+    }
+
+    /** 列表页简要信息 */
+    interface BiDashboardBrief {
+      id: string;
+      name: string;
+      description: string | null;
+      /** 图表数量 */
+      itemCount: number;
+      createdAt: string | null;
+      updatedAt: string | null;
+    }
+
+    /** 分页列表响应 */
+    interface BiDashboardList {
+      records: BiDashboardBrief[];
+      total: number;
+      current: number;
+      size: number;
+    }
+
+    /** 详情（含完整 layout） */
+    interface BiDashboardDetail {
+      id: string;
+      name: string;
+      description: string | null;
+      layout: BiDashboardLayout;
+      tenantId?: number;
+      createdAt: string | null;
+      updatedAt: string | null;
+    }
+
+    /** 图表元信息（刷新/预览响应内嵌） */
+    interface BiChartMeta {
+      name: string;
+      chartType: string;
+      xCol: string | null;
+      yCol: string | null;
+    }
+
+    /** 刷新单项结果 */
+    interface BiDashboardRefreshItem {
+      chartId: string;
+      /** success / failed / deleted */
+      status: 'success' | 'failed' | 'deleted';
+      /** 成功时返回 */
+      resultSnapshot?: ChartResultSnapshot;
+      /** 失败/已删除时为 null */
+      chartMeta: BiChartMeta | null;
+      /** 失败时返回错误信息 */
+      errorMessage?: string;
+      /** 成功时返回快照时间 ISO */
+      snapshotAt?: string;
+    }
+
+    /** 刷新响应聚合 */
+    interface BiDashboardRefreshResult {
+      items: BiDashboardRefreshItem[];
+      totalElapsedMs: number;
+    }
+
+    /** 预览单项结果（不刷新，用 BiChart 已有快照） */
+    interface BiDashboardPreviewItem {
+      chartId: string;
+      chartMeta: BiChartMeta | null;
+      /** 已删除时无快照 */
+      resultSnapshot?: ChartResultSnapshot;
+      /** 仅 deleted 状态出现 */
+      status?: 'deleted';
+    }
+
+    /** 预览响应聚合 */
+    interface BiDashboardPreview {
+      id: number;
+      name: string;
+      description: string | null;
+      layout: BiDashboardLayout;
+      items: BiDashboardPreviewItem[];
+    }
+
+    /** 创建/更新请求 */
+    interface BiDashboardPayload {
+      name: string;
+      description?: string | null;
+      layout: BiDashboardLayout;
+    }
+
+    /** 分页查询参数 */
+    interface BiDashboardSearchParams {
+      current: number;
+      size: number;
+      name?: string;
+    }
   }
 }
