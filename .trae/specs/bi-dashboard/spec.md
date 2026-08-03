@@ -429,7 +429,7 @@ BI_DASHBOARD_REFRESH_TIMEOUT: int = 25
 - `schemas_dashboard.py` — Dashboard schemas
 - `services_dashboard.py` — Dashboard 服务（含 refresh）
 - `api/dashboard.py` — Dashboard 路由
-- `migrations/0004_add_bi_dashboard.py` — 迁移（承接 0001-0003）
+- `migrations/app_system/0005_add_bi_dashboard.py` — 迁移（承接 0001-0004）
 
 **前端**（`web/src/`）：
 - `views/bi/dashboards/index.vue` — 列表页
