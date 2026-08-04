@@ -15,6 +15,8 @@ const biLocale = {
     'bi_async-query-detail': '任务详情',
     bi_dashboards: '仪表盘',
     'bi_dashboard-detail': '仪表盘详情',
+    bi_masking: '脱敏规则',
+    bi_quota: '配额配置',
     bi_share: '分享图表'
   },
   page: {
@@ -385,6 +387,49 @@ const biLocale = {
         statusSuccess: '成功',
         statusFailed: '失败',
         statusDeleted: '已删除'
+      },
+      masking: {
+        title: '脱敏规则',
+        create: '新建规则',
+        edit: '编辑规则',
+        name: '规则名称',
+        columnPattern: '列名匹配模式',
+        maskType: '脱敏类型',
+        maskChar: '占位字符',
+        keepPrefix: '保留前缀',
+        keepSuffix: '保留后缀',
+        status: '状态',
+        searchPlaceholder: '搜索规则名称',
+        confirmDelete: '确认删除该规则吗？',
+        empty: '暂无脱敏规则',
+        maskTypes: {
+          phone: '手机号',
+          idcard: '身份证',
+          email: '邮箱',
+          bankcard: '银行卡',
+          custom: '自定义'
+        }
+      },
+      quota: {
+        title: '配额配置',
+        create: '新建配置',
+        edit: '编辑配置',
+        name: '配置名称',
+        maxRows: '最大行数',
+        timeoutSeconds: '超时秒数',
+        breakerThreshold: '熔断阈值',
+        breakerWindowSeconds: '熔断窗口秒数',
+        scopeType: '作用域',
+        scopeId: '作用域ID',
+        status: '状态',
+        searchPlaceholder: '搜索配置名称',
+        confirmDelete: '确认删除该配置吗？',
+        empty: '暂无配额配置',
+        scopeTypes: {
+          global: '全局',
+          user: '按用户',
+          datasource: '按数据源'
+        }
       }
     }
   }

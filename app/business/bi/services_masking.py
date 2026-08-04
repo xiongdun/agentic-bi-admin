@@ -1,4 +1,5 @@
 """BiMaskingRule 加载与缓存服务。"""
+
 from __future__ import annotations
 
 import json
@@ -28,21 +29,19 @@ async def load_masking_rules() -> list[BiMaskingRule]:
             log.warning("bi.masking.cache.parse_failed, fallback to DB")
 
     rules = await BiMaskingRule.filter(status_type=StatusType.enable).all()
-    payload = json.dumps(
-        [
-            {
-                "id": r.id,
-                "name": r.name,
-                "column_pattern": r.column_pattern,
-                "mask_type": r.mask_type,
-                "mask_char": r.mask_char,
-                "keep_prefix": r.keep_prefix,
-                "keep_suffix": r.keep_suffix,
-                "status_type": r.status_type,
-            }
-            for r in rules
-        ]
-    )
+    payload = json.dumps([
+        {
+            "id": r.id,
+            "name": r.name,
+            "column_pattern": r.column_pattern,
+            "mask_type": r.mask_type,
+            "mask_char": r.mask_char,
+            "keep_prefix": r.keep_prefix,
+            "keep_suffix": r.keep_suffix,
+            "status_type": r.status_type,
+        }
+        for r in rules
+    ])
     await redis.set(_CACHE_KEY, payload, ex=BIZ_SETTINGS.BI_MASKING_CACHE_TTL)
     return rules
 

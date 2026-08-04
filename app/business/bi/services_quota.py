@@ -1,4 +1,5 @@
 """BiQuotaConfig 加载与缓存服务。"""
+
 from __future__ import annotations
 
 import json
@@ -25,9 +26,7 @@ async def _load_one(scope_type: str, scope_id: int | None) -> BiQuotaConfig | No
     return await qs.first()
 
 
-async def load_quota_config(
-    scope_type: str, scope_id: int | None, *, user_id: int | None = None
-) -> QuotaConfig:
+async def load_quota_config(scope_type: str, scope_id: int | None, *, user_id: int | None = None) -> QuotaConfig:
     """链式查找配额配置（datasource > user > global > env 默认）。
 
     Args:
@@ -70,14 +69,12 @@ async def load_quota_config(
         # 查 DB
         cfg = await _load_one(st, sid)
         if cfg:
-            payload = json.dumps(
-                {
-                    "max_rows": cfg.max_rows,
-                    "timeout_seconds": cfg.timeout_seconds,
-                    "breaker_threshold": cfg.breaker_threshold,
-                    "breaker_window_seconds": cfg.breaker_window_seconds,
-                }
-            )
+            payload = json.dumps({
+                "max_rows": cfg.max_rows,
+                "timeout_seconds": cfg.timeout_seconds,
+                "breaker_threshold": cfg.breaker_threshold,
+                "breaker_window_seconds": cfg.breaker_window_seconds,
+            })
             await redis.set(key, payload, ex=BIZ_SETTINGS.BI_QUOTA_CACHE_TTL)
             return QuotaConfig(
                 max_rows=cfg.max_rows,

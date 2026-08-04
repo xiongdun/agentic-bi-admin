@@ -171,6 +171,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         ]
       },
       {
+        name: 'bi_masking',
+        path: '/bi/masking',
+        component: 'view.bi_masking',
+        meta: {
+          title: 'bi_masking',
+          i18nKey: 'route.bi_masking'
+        }
+      },
+      {
         name: 'bi_metadata',
         path: '/bi/metadata',
         component: 'view.bi_metadata',
@@ -207,6 +216,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'bi_models',
           i18nKey: 'route.bi_models'
+        }
+      },
+      {
+        name: 'bi_quota',
+        path: '/bi/quota',
+        component: 'view.bi_quota',
+        meta: {
+          title: 'bi_quota',
+          i18nKey: 'route.bi_quota'
         }
       },
       {

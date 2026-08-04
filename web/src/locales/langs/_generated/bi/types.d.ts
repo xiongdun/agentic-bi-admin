@@ -378,6 +378,49 @@ declare namespace App {
           statusFailed: string;
           statusDeleted: string;
         };
+        masking: {
+          title: string;
+          create: string;
+          edit: string;
+          name: string;
+          columnPattern: string;
+          maskType: string;
+          maskChar: string;
+          keepPrefix: string;
+          keepSuffix: string;
+          status: string;
+          searchPlaceholder: string;
+          confirmDelete: string;
+          empty: string;
+          maskTypes: {
+            phone: string;
+            idcard: string;
+            email: string;
+            bankcard: string;
+            custom: string;
+          };
+        };
+        quota: {
+          title: string;
+          create: string;
+          edit: string;
+          name: string;
+          maxRows: string;
+          timeoutSeconds: string;
+          breakerThreshold: string;
+          breakerWindowSeconds: string;
+          scopeType: string;
+          scopeId: string;
+          status: string;
+          searchPlaceholder: string;
+          confirmDelete: string;
+          empty: string;
+          scopeTypes: {
+            global: string;
+            user: string;
+            datasource: string;
+          };
+        };
       };
     }
   }

@@ -8,6 +8,7 @@
 
 create / update / delete / batch_delete 后主动失效脱敏规则缓存，确保 60s TTL 内变更立即生效。
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter

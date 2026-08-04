@@ -139,11 +139,11 @@ class TestMaskingAPIAuth:
         """未登录访问 /masking/search 返回 2100。"""
         resp = await client.post(f"{PREFIX}/masking/search", json={"current": 1, "size": 10})
         assert resp.status_code == 200
-        assert resp.json()["code"] == 2100
+        assert str(resp.json()["code"]) == "2100"
 
     async def test_create_requires_auth(self, app, client):
         resp = await client.post(
             f"{PREFIX}/masking",
             json={"name": "r1", "column_pattern": "phone", "mask_type": "phone"},
         )
-        assert resp.json()["code"] == 2100
+        assert str(resp.json()["code"]) == "2100"

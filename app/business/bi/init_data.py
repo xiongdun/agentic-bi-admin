@@ -177,6 +177,34 @@ BI_MENU_CHILDREN = [
         "hide_in_menu": True,
         "active_menu": "bi_dashboards",
     },
+    {
+        "menu_name": "脱敏规则",
+        "route_name": "bi_masking",
+        "route_path": "/bi/masking",
+        "component": "view.bi_masking",
+        "icon": "mdi:shield-half-full",
+        "order": 10,
+        "buttons": [
+            {"button_code": "B_BI_MASKING_VIEW", "button_desc": "查看脱敏规则"},
+            {"button_code": "B_BI_MASKING_CREATE", "button_desc": "创建脱敏规则"},
+            {"button_code": "B_BI_MASKING_EDIT", "button_desc": "编辑脱敏规则"},
+            {"button_code": "B_BI_MASKING_DELETE", "button_desc": "删除脱敏规则"},
+        ],
+    },
+    {
+        "menu_name": "配额配置",
+        "route_name": "bi_quota",
+        "route_path": "/bi/quota",
+        "component": "view.bi_quota",
+        "icon": "mdi:speedometer",
+        "order": 11,
+        "buttons": [
+            {"button_code": "B_BI_QUOTA_VIEW", "button_desc": "查看配额配置"},
+            {"button_code": "B_BI_QUOTA_CREATE", "button_desc": "创建配额配置"},
+            {"button_code": "B_BI_QUOTA_EDIT", "button_desc": "编辑配额配置"},
+            {"button_code": "B_BI_QUOTA_DELETE", "button_desc": "删除配额配置"},
+        ],
+    },
 ]
 
 # BI 全量按钮码聚合，便于角色授权引用。
@@ -216,6 +244,15 @@ BI_ALL_BUTTONS = [
     "B_BI_DASHBOARD_VIEW",
     "B_BI_DASHBOARD_EDIT",
     "B_BI_DASHBOARD_DELETE",
+    # masking / quota
+    "B_BI_MASKING_VIEW",
+    "B_BI_MASKING_CREATE",
+    "B_BI_MASKING_EDIT",
+    "B_BI_MASKING_DELETE",
+    "B_BI_QUOTA_VIEW",
+    "B_BI_QUOTA_CREATE",
+    "B_BI_QUOTA_EDIT",
+    "B_BI_QUOTA_DELETE",
 ]
 
 # BI 全量菜单 route_name（含顶级与子菜单）。
@@ -235,6 +272,8 @@ BI_ALL_MENUS = [
     "bi_async-query-detail",
     "bi_dashboards",
     "bi_dashboard-detail",
+    "bi_masking",
+    "bi_quota",
 ]
 
 # 数据分析师可见菜单与按钮码子集。
@@ -362,6 +401,20 @@ BI_ADMIN_APIS: list[str] = [
     "bi.dashboards.delete",
     "bi.dashboards.refresh",
     "bi.dashboards.preview",
+    # masking（CRUD）
+    "bi.masking.list",
+    "bi.masking.get",
+    "bi.masking.create",
+    "bi.masking.update",
+    "bi.masking.delete",
+    "bi.masking.batch_delete",
+    # quota（CRUD）
+    "bi.quota.list",
+    "bi.quota.get",
+    "bi.quota.create",
+    "bi.quota.update",
+    "bi.quota.delete",
+    "bi.quota.batch_delete",
 ]
 
 # 数据分析师：仅对话 / SQL 工作台 / 指标查看相关路由

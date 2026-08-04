@@ -15,6 +15,8 @@ const biLocale = {
     'bi_async-query-detail': 'Task Detail',
     bi_dashboards: 'Dashboards',
     'bi_dashboard-detail': 'Dashboard Detail',
+    bi_masking: 'Masking Rules',
+    bi_quota: 'Quota Config',
     bi_share: 'Shared Chart'
   },
   page: {
@@ -385,6 +387,49 @@ const biLocale = {
         statusSuccess: 'Success',
         statusFailed: 'Failed',
         statusDeleted: 'Deleted'
+      },
+      masking: {
+        title: 'Masking Rules',
+        create: 'New Rule',
+        edit: 'Edit Rule',
+        name: 'Rule Name',
+        columnPattern: 'Column Pattern',
+        maskType: 'Mask Type',
+        maskChar: 'Mask Char',
+        keepPrefix: 'Keep Prefix',
+        keepSuffix: 'Keep Suffix',
+        status: 'Status',
+        searchPlaceholder: 'Search rule name',
+        confirmDelete: 'Delete this rule?',
+        empty: 'No masking rules',
+        maskTypes: {
+          phone: 'Phone',
+          idcard: 'ID Card',
+          email: 'Email',
+          bankcard: 'Bank Card',
+          custom: 'Custom'
+        }
+      },
+      quota: {
+        title: 'Quota Config',
+        create: 'New Config',
+        edit: 'Edit Config',
+        name: 'Config Name',
+        maxRows: 'Max Rows',
+        timeoutSeconds: 'Timeout (s)',
+        breakerThreshold: 'Breaker Threshold',
+        breakerWindowSeconds: 'Breaker Window (s)',
+        scopeType: 'Scope',
+        scopeId: 'Scope ID',
+        status: 'Status',
+        searchPlaceholder: 'Search config name',
+        confirmDelete: 'Delete this config?',
+        empty: 'No quota configs',
+        scopeTypes: {
+          global: 'Global',
+          user: 'By User',
+          datasource: 'By Datasource'
+        }
       }
     }
   }

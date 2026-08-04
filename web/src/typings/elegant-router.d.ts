@@ -48,10 +48,12 @@ declare module "@elegant-router/types" {
     "bi_chat": "/bi/chat";
     "bi_dashboards": "/bi/dashboards";
     "bi_dashboards_detail": "/bi/dashboards/detail/:id";
+    "bi_masking": "/bi/masking";
     "bi_metadata": "/bi/metadata";
     "bi_metadata-detail": "/bi/metadata-detail/:id";
     "bi_metrics": "/bi/metrics";
     "bi_models": "/bi/models";
+    "bi_quota": "/bi/quota";
     "bi_share": "/bi/share/:token";
     "bi_sql-workbench": "/bi/sql-workbench";
     "function": "/function";
@@ -223,10 +225,12 @@ declare module "@elegant-router/types" {
     | "bi_chat"
     | "bi_dashboards_detail"
     | "bi_dashboards"
+    | "bi_masking"
     | "bi_metadata-detail"
     | "bi_metadata"
     | "bi_metrics"
     | "bi_models"
+    | "bi_quota"
     | "bi_share"
     | "bi_sql-workbench"
     | "function_hide-child_one"

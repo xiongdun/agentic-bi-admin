@@ -541,15 +541,61 @@ declare namespace Api {
       keepSuffix: number;
     }>;
 
+    type BiMaskingRuleSearchParams = CommonType.RecordNullable<
+      {
+        name?: string;
+        maskType?: MaskType;
+        statusType?: Common.EnableStatus;
+      } & CommonSearchParams
+    >;
+
+    type BiMaskingRuleList = Common.PaginatingQueryRecord<BiMaskingRule>;
+
+    type BiMaskingRuleOperateParams = {
+      id?: string;
+      name: string;
+      columnPattern: string;
+      maskType: MaskType;
+      maskChar?: string | null;
+      keepPrefix?: number;
+      keepSuffix?: number;
+      statusType?: Common.EnableStatus;
+    };
+
+    /** 配额作用域类型 */
+    type QuotaScopeType = 'global' | 'user' | 'datasource';
+
     type BiQuotaConfig = Common.CommonRecord<{
       name: string;
       maxRows: number;
       timeoutSeconds: number;
       breakerThreshold: number;
       breakerWindowSeconds: number;
-      scopeType: string;
-      scopeId: number;
+      scopeType: QuotaScopeType;
+      scopeId: number | null;
     }>;
+
+    type BiQuotaConfigSearchParams = CommonType.RecordNullable<
+      {
+        name?: string;
+        scopeType?: QuotaScopeType;
+        statusType?: Common.EnableStatus;
+      } & CommonSearchParams
+    >;
+
+    type BiQuotaConfigList = Common.PaginatingQueryRecord<BiQuotaConfig>;
+
+    type BiQuotaConfigOperateParams = {
+      id?: string;
+      name: string;
+      maxRows?: number;
+      timeoutSeconds?: number;
+      breakerThreshold?: number;
+      breakerWindowSeconds?: number;
+      scopeType: QuotaScopeType;
+      scopeId?: number | null;
+      statusType?: Common.EnableStatus;
+    };
 
     // ============================================================
     // SQL Workbench（SQL 工作台）
