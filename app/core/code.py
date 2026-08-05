@@ -131,3 +131,14 @@ class Code:
     BI_QUERY_EXEC_FAILED = "4104"  # SQL 执行失败（sandbox 已用，登记进 Code）
     BI_MASKING_RULE_NOT_FOUND = "4120"  # 脱敏规则不存在
     BI_QUOTA_CONFIG_NOT_FOUND = "4121"  # 配额配置不存在
+
+    # 41xx — BI 订阅推送
+    BI_SUBSCRIPTION_NOT_FOUND = "4130"  # 订阅不存在
+    BI_NOTIFY_RECORD_NOT_FOUND = "4131"  # 消息记录不存在
+    BI_SUBSCRIPTION_CRON_INVALID = "4132"  # cron 表达式非法
+    BI_SUBSCRIPTION_DASHBOARD_NOT_FOUND = "4133"  # 订阅的仪表盘不存在
+
+    # 41xx — BI 报表导出
+    BI_EXPORT_CHART_NOT_FOUND = "4140"  # 图表不存在或越权
+    BI_EXPORT_DASHBOARD_NOT_FOUND = "4141"  # 仪表盘不存在或越权
+    BI_EXPORT_NO_SNAPSHOT = "4142"  # 图表无结果快照或 rows 为空

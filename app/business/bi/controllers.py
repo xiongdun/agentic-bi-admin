@@ -19,8 +19,10 @@ from app.business.bi.models import (
     BiLLMProvider,
     BiMaskingRule,
     BiMetric,
+    BiNotifyRecord,
     BiQueryTask,
     BiQuotaConfig,
+    BiSubscription,
     BiTable,
 )
 from app.utils import CRUDBase
@@ -56,6 +58,10 @@ bi_chart_controller = CRUDBase(model=BiChart)
 # ---- async query ----
 bi_query_task_controller = CRUDBase(model=BiQueryTask)
 
+# ---- subscription ----
+bi_subscription_controller = CRUDBase(model=BiSubscription)
+bi_notify_record_controller = CRUDBase(model=BiNotifyRecord)
+
 
 # 兼容别名：与 HR 模块命名风格一致（PascalCase + Controller 后缀）
 BiDatasourceController = bi_datasource_controller
@@ -73,3 +79,5 @@ BiMaskingRuleController = bi_masking_rule_controller
 BiQuotaConfigController = bi_quota_config_controller
 BiChartController = bi_chart_controller
 BiQueryTaskController = bi_query_task_controller
+BiSubscriptionController = bi_subscription_controller
+BiNotifyRecordController = bi_notify_record_controller

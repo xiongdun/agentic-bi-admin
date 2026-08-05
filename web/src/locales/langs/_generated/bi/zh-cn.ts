@@ -17,6 +17,8 @@ const biLocale = {
     'bi_dashboard-detail': '仪表盘详情',
     bi_masking: '脱敏规则',
     bi_quota: '配额配置',
+    bi_subscriptions: '仪表盘订阅',
+    'bi_notify-records': '订阅消息',
     bi_share: '分享图表'
   },
   page: {
@@ -430,6 +432,49 @@ const biLocale = {
           user: '按用户',
           datasource: '按数据源'
         }
+      },
+      subscription: {
+        title: '仪表盘订阅',
+        create: '新建订阅',
+        edit: '编辑订阅',
+        name: '订阅名称',
+        dashboard: '仪表盘',
+        cronExpr: 'cron 表达式',
+        nextRunAt: '下次触发',
+        lastRunAt: '上次触发',
+        lastStatus: '上次状态',
+        status: '状态',
+        searchPlaceholder: '搜索订阅名称',
+        cronPresets: {
+          hourly: '每小时',
+          daily: '每天',
+          weekly: '每周'
+        },
+        cronHint: '5 字段：分 时 日 月 周（如 0 9 * * * 每天 9 点）',
+        confirmDelete: '确认删除该订阅吗？',
+        empty: '暂无订阅',
+        statusSuccess: '成功',
+        statusFailed: '失败'
+      },
+      notify: {
+        title: '订阅消息',
+        unread: '未读',
+        read: '已读',
+        markRead: '标记已读',
+        viewAll: '查看全部',
+        createdAt: '创建时间',
+        empty: '暂无消息',
+        statusSuccess: '成功',
+        statusFailed: '失败'
+      },
+      export: {
+        export: '导出',
+        csv: 'CSV',
+        excel: 'Excel',
+        pdf: 'PDF',
+        noChart: '暂无可导出的图表',
+        exportSuccess: '导出成功',
+        exportFailed: '导出失败'
       }
     }
   }

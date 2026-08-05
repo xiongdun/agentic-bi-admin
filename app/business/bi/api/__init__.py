@@ -11,6 +11,11 @@
 - ``chart`` —— 图表保存（CRUD + refresh + share + 免登录查看）
 - ``async_query`` —— 异步大查询（submit / list / get / cancel / delete / result / download）
 - ``dashboard`` —— 仪表盘（CRUD + refresh + preview）
+- ``export`` —— 报表导出（chart_csv / charts_excel / dashboard_excel）
+- ``masking`` —— 脱敏规则（CRUD）
+- ``quota`` —— 配额配置（CRUD）
+- ``subscription`` —— 仪表盘订阅（CRUD + 行级隔离）
+- ``notify`` —— 订阅消息（只读列表 + 未读数 + 标记已读，行级隔离）
 
 module.py 挂载到 ``/api/v1/business/bi``，``auth="permission"`` 统一应用
 ``DependPermission``，各子路由再按需追加 ``require_buttons(...)`` 做按钮级权限。
@@ -28,12 +33,15 @@ from app.business.bi.api.chart import router as chart_router
 from app.business.bi.api.chat import router as chat_router
 from app.business.bi.api.dashboard import router as dashboard_router
 from app.business.bi.api.datasource import router as datasource_router
+from app.business.bi.api.export import router as export_router
 from app.business.bi.api.llm import router as llm_router
 from app.business.bi.api.masking import router as masking_router
 from app.business.bi.api.metadata import router as metadata_router
 from app.business.bi.api.metric import router as metric_router
+from app.business.bi.api.notify import router as notify_router
 from app.business.bi.api.quota import router as quota_router
 from app.business.bi.api.sql_workbench import router as sql_workbench_router
+from app.business.bi.api.subscription import router as subscription_router
 
 router = APIRouter()
 router.include_router(datasource_router)
@@ -46,8 +54,11 @@ router.include_router(audit_router)
 router.include_router(chart_router)
 router.include_router(async_query_router)
 router.include_router(dashboard_router)
+router.include_router(export_router)
 router.include_router(masking_router)
 router.include_router(quota_router)
+router.include_router(subscription_router)
+router.include_router(notify_router)
 
 # 公开路由（免登录查看分享图表）—— 由 module.py 单独挂载到 auth="public" 的 BusinessRouter
 public_router = APIRouter()

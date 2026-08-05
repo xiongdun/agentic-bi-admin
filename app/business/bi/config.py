@@ -70,6 +70,14 @@ class BusinessSettings(BaseSettings):
     BI_MASKING_CACHE_TTL: int = 60  # 脱敏规则缓存 TTL（秒）
     BI_QUOTA_CACHE_TTL: int = 60  # 配额配置缓存 TTL（秒）
 
+    # ==================== Subscription ====================
+    BI_SUBSCRIPTION_DISPATCH_INTERVAL: int = 60  # 调度扫描间隔（秒）
+    BI_SUBSCRIPTION_EXECUTE_TIMEOUT: int = 30  # 单订阅执行超时（秒）
+    BI_NOTIFY_RECORD_TTL_DAYS: int = 30  # 消息记录保留天数
+
+    # ==================== Export ====================
+    BI_EXPORT_MAX_ROWS: int = 1000  # 单图表导出行数上限（与快照截断一致）
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

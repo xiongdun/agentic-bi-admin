@@ -421,6 +421,49 @@ declare namespace App {
             datasource: string;
           };
         };
+        subscription: {
+          title: string;
+          create: string;
+          edit: string;
+          name: string;
+          dashboard: string;
+          cronExpr: string;
+          nextRunAt: string;
+          lastRunAt: string;
+          lastStatus: string;
+          status: string;
+          searchPlaceholder: string;
+          cronPresets: {
+            hourly: string;
+            daily: string;
+            weekly: string;
+          };
+          cronHint: string;
+          confirmDelete: string;
+          empty: string;
+          statusSuccess: string;
+          statusFailed: string;
+        };
+        notify: {
+          title: string;
+          unread: string;
+          read: string;
+          markRead: string;
+          viewAll: string;
+          createdAt: string;
+          empty: string;
+          statusSuccess: string;
+          statusFailed: string;
+        };
+        export: {
+          export: string;
+          csv: string;
+          excel: string;
+          pdf: string;
+          noChart: string;
+          exportSuccess: string;
+          exportFailed: string;
+        };
       };
     }
   }

@@ -960,5 +960,67 @@ declare namespace Api {
       size: number;
       name?: string;
     }
+
+    // ============================================================
+    // Subscription（仪表盘订阅）
+    // ============================================================
+
+    type BiSubscriptionLastStatus = 'success' | 'failed';
+
+    type BiSubscription = Common.CommonRecord<{
+      name: string;
+      dashboardId: string;
+      cronExpr: string;
+      nextRunAt: string | null;
+      lastRunAt: string | null;
+      lastStatus: BiSubscriptionLastStatus | null;
+      statusType: Common.EnableStatus;
+    }>;
+
+    type BiSubscriptionSearchParams = CommonType.RecordNullable<
+      {
+        name?: string;
+        statusType?: Common.EnableStatus;
+      } & CommonSearchParams
+    >;
+
+    type BiSubscriptionList = Common.PaginatingQueryRecord<BiSubscription>;
+
+    type BiSubscriptionOperateParams = {
+      id?: string;
+      name: string;
+      dashboardId: string;
+      cronExpr: string;
+      statusType?: Common.EnableStatus;
+    };
+
+    // ============================================================
+    // Notify（订阅消息记录）
+    // ============================================================
+
+    type BiNotifyStatus = 'success' | 'failed';
+
+    type BiNotifyRecord = Common.CommonRecord<{
+      subscriptionId: string;
+      title: string;
+      content: string | null;
+      status: BiNotifyStatus;
+      isRead: boolean;
+      /** 格式化创建时间（后端生成，如 2026-08-04 09:00:00） */
+      fmtCreatedAt: string;
+    }>;
+
+    type BiNotifyRecordSearchParams = CommonType.RecordNullable<
+      {
+        status?: BiNotifyStatus;
+        isRead?: boolean;
+      } & CommonSearchParams
+    >;
+
+    type BiNotifyRecordList = Common.PaginatingQueryRecord<BiNotifyRecord>;
+
+    type BiNotifyUnreadCount = {
+      count: number;
+    };
   }
 }

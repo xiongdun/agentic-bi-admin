@@ -53,9 +53,11 @@ declare module "@elegant-router/types" {
     "bi_metadata-detail": "/bi/metadata-detail/:id";
     "bi_metrics": "/bi/metrics";
     "bi_models": "/bi/models";
+    "bi_notify-records": "/bi/notify-records";
     "bi_quota": "/bi/quota";
     "bi_share": "/bi/share/:token";
     "bi_sql-workbench": "/bi/sql-workbench";
+    "bi_subscriptions": "/bi/subscriptions";
     "function": "/function";
     "function_hide-child": "/function/hide-child";
     "function_hide-child_one": "/function/hide-child/one";
@@ -230,9 +232,11 @@ declare module "@elegant-router/types" {
     | "bi_metadata"
     | "bi_metrics"
     | "bi_models"
+    | "bi_notify-records"
     | "bi_quota"
     | "bi_share"
     | "bi_sql-workbench"
+    | "bi_subscriptions"
     | "function_hide-child_one"
     | "function_hide-child_three"
     | "function_hide-child_two"

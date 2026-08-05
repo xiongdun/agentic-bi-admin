@@ -10,6 +10,7 @@ import GlobalBreadcrumb from '../global-breadcrumb/index.vue';
 import GlobalSearch from '../global-search/index.vue';
 import ThemeButton from './components/theme-button.vue';
 import UserAvatar from './components/user-avatar.vue';
+import NotifyBell from './components/notify-bell.vue';
 
 defineOptions({
   name: 'GlobalHeader'
@@ -71,6 +72,7 @@ async function handleExitImpersonate() {
         @switch="themeStore.toggleThemeScheme"
       />
       <ThemeButton />
+      <NotifyBell />
       <UserAvatar />
     </div>
   </DarkModeContainer>

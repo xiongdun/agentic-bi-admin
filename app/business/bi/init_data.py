@@ -116,6 +116,7 @@ BI_MENU_CHILDREN = [
             {"button_code": "B_BI_CHART_DELETE", "button_desc": "删除图表"},
             {"button_code": "B_BI_CHART_REFRESH", "button_desc": "刷新图表数据"},
             {"button_code": "B_BI_CHART_SHARE", "button_desc": "外部分享"},
+            {"button_code": "B_BI_CHART_EXPORT", "button_desc": "导出图表"},
         ],
     },
     {
@@ -165,6 +166,7 @@ BI_MENU_CHILDREN = [
             {"button_code": "B_BI_DASHBOARD_VIEW", "button_desc": "查看仪表盘"},
             {"button_code": "B_BI_DASHBOARD_EDIT", "button_desc": "编辑仪表盘"},
             {"button_code": "B_BI_DASHBOARD_DELETE", "button_desc": "删除仪表盘"},
+            {"button_code": "B_BI_DASHBOARD_EXPORT", "button_desc": "导出仪表盘"},
         ],
     },
     {
@@ -205,6 +207,31 @@ BI_MENU_CHILDREN = [
             {"button_code": "B_BI_QUOTA_DELETE", "button_desc": "删除配额配置"},
         ],
     },
+    {
+        "menu_name": "仪表盘订阅",
+        "route_name": "bi_subscriptions",
+        "route_path": "/bi/subscriptions",
+        "component": "view.bi_subscriptions",
+        "icon": "mdi:calendar-clock",
+        "order": 12,
+        "buttons": [
+            {"button_code": "B_BI_SUBSCRIPTION_VIEW", "button_desc": "查看订阅"},
+            {"button_code": "B_BI_SUBSCRIPTION_CREATE", "button_desc": "创建订阅"},
+            {"button_code": "B_BI_SUBSCRIPTION_EDIT", "button_desc": "编辑订阅"},
+            {"button_code": "B_BI_SUBSCRIPTION_DELETE", "button_desc": "删除订阅"},
+        ],
+    },
+    {
+        "menu_name": "订阅消息",
+        "route_name": "bi_notify-records",
+        "route_path": "/bi/notify-records",
+        "component": "view.bi_notify-records",
+        "icon": "mdi:bell-outline",
+        "order": 13,
+        "buttons": [
+            {"button_code": "B_BI_NOTIFY_VIEW", "button_desc": "查看消息"},
+        ],
+    },
 ]
 
 # BI 全量按钮码聚合，便于角色授权引用。
@@ -235,6 +262,7 @@ BI_ALL_BUTTONS = [
     "B_BI_CHART_DELETE",
     "B_BI_CHART_REFRESH",
     "B_BI_CHART_SHARE",
+    "B_BI_CHART_EXPORT",
     "B_BI_SQL_ASYNC_RUN",
     "B_BI_SQL_TASK_VIEW",
     "B_BI_SQL_TASK_CANCEL",
@@ -244,6 +272,7 @@ BI_ALL_BUTTONS = [
     "B_BI_DASHBOARD_VIEW",
     "B_BI_DASHBOARD_EDIT",
     "B_BI_DASHBOARD_DELETE",
+    "B_BI_DASHBOARD_EXPORT",
     # masking / quota
     "B_BI_MASKING_VIEW",
     "B_BI_MASKING_CREATE",
@@ -253,6 +282,12 @@ BI_ALL_BUTTONS = [
     "B_BI_QUOTA_CREATE",
     "B_BI_QUOTA_EDIT",
     "B_BI_QUOTA_DELETE",
+    # subscription / notify
+    "B_BI_SUBSCRIPTION_VIEW",
+    "B_BI_SUBSCRIPTION_CREATE",
+    "B_BI_SUBSCRIPTION_EDIT",
+    "B_BI_SUBSCRIPTION_DELETE",
+    "B_BI_NOTIFY_VIEW",
 ]
 
 # BI 全量菜单 route_name（含顶级与子菜单）。
@@ -274,6 +309,8 @@ BI_ALL_MENUS = [
     "bi_dashboard-detail",
     "bi_masking",
     "bi_quota",
+    "bi_subscriptions",
+    "bi_notify-records",
 ]
 
 # 数据分析师可见菜单与按钮码子集。
@@ -289,6 +326,8 @@ BI_ANALYST_MENUS = [
     "bi_async-query-detail",
     "bi_dashboards",
     "bi_dashboard-detail",
+    "bi_subscriptions",
+    "bi_notify-records",
 ]
 BI_ANALYST_BUTTONS = [
     "B_BI_CHAT_NEW",
@@ -301,6 +340,7 @@ BI_ANALYST_BUTTONS = [
     "B_BI_CHART_DELETE",
     "B_BI_CHART_REFRESH",
     "B_BI_CHART_SHARE",
+    "B_BI_CHART_EXPORT",
     "B_BI_SQL_ASYNC_RUN",
     "B_BI_SQL_TASK_VIEW",
     "B_BI_SQL_TASK_CANCEL",
@@ -310,6 +350,13 @@ BI_ANALYST_BUTTONS = [
     "B_BI_DASHBOARD_VIEW",
     "B_BI_DASHBOARD_EDIT",
     "B_BI_DASHBOARD_DELETE",
+    "B_BI_DASHBOARD_EXPORT",
+    # subscription / notify — 数据分析师可管理自己的订阅与查看消息
+    "B_BI_SUBSCRIPTION_VIEW",
+    "B_BI_SUBSCRIPTION_CREATE",
+    "B_BI_SUBSCRIPTION_EDIT",
+    "B_BI_SUBSCRIPTION_DELETE",
+    "B_BI_NOTIFY_VIEW",
 ]
 
 # apis 字段：BI API 路由的 route_key（``APIRoute.name``）列表。
@@ -415,6 +462,21 @@ BI_ADMIN_APIS: list[str] = [
     "bi.quota.update",
     "bi.quota.delete",
     "bi.quota.batch_delete",
+    # subscription（CRUD + 行级隔离）
+    "bi.subscription.list",
+    "bi.subscription.get",
+    "bi.subscription.create",
+    "bi.subscription.update",
+    "bi.subscription.delete",
+    "bi.subscription.batch_delete",
+    # notify（只读 + 标记已读 + 未读数）
+    "bi.notify.list",
+    "bi.notify.unread_count",
+    "bi.notify.mark_read",
+    # export（报表导出）
+    "bi.export.chart_csv",
+    "bi.export.charts_excel",
+    "bi.export.dashboard_excel",
 ]
 
 # 数据分析师：仅对话 / SQL 工作台 / 指标查看相关路由
@@ -470,6 +532,21 @@ BI_ANALYST_APIS: list[str] = [
     "bi.dashboards.delete",
     "bi.dashboards.refresh",
     "bi.dashboards.preview",
+    # subscription（CRUD + 行级隔离 — 数据分析师可管理自己的订阅）
+    "bi.subscription.list",
+    "bi.subscription.get",
+    "bi.subscription.create",
+    "bi.subscription.update",
+    "bi.subscription.delete",
+    "bi.subscription.batch_delete",
+    # notify（只读 + 标记已读 + 未读数 — 数据分析师可查看自己的消息）
+    "bi.notify.list",
+    "bi.notify.unread_count",
+    "bi.notify.mark_read",
+    # export（报表导出 — 数据分析师可导出自己的图表/仪表盘）
+    "bi.export.chart_csv",
+    "bi.export.charts_excel",
+    "bi.export.dashboard_excel",
 ]
 
 BI_ROLE_SEEDS = [

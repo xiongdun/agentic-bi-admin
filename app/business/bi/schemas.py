@@ -606,3 +606,54 @@ class BiQueryTaskOutSchema(SchemaBase):
     finished_at: datetime | None = Field(None, title="完成时间")
     source: str | None = Field(None, title="提交来源")
     created_at: datetime | None = Field(None, title="创建时间")
+
+
+# ============================================================
+# subscription：BiSubscription / BiNotifyRecord
+# ============================================================
+
+
+class BiSubscriptionBase(SchemaBase):
+    name: str | None = Field(None, title="订阅名称")
+    dashboard_id: str | None = Field(None, title="仪表盘ID（sqid）")
+    cron_expr: str | None = Field(None, title="cron 表达式（5字段：分 时 日 月 周）")
+    status_type: StatusType | None = Field(None, title="状态")
+
+
+class BiSubscriptionCreate(BiSubscriptionBase):
+    name: str = Field(title="订阅名称")
+    dashboard_id: str = Field(title="仪表盘ID（sqid）")
+    cron_expr: str = Field(title="cron 表达式")
+
+
+BiSubscriptionUpdate = make_optional(BiSubscriptionCreate, "BiSubscriptionUpdate")
+
+
+class BiSubscriptionSearch(BiSubscriptionBase, PageQueryBase):
+    pass  # type: ignore[misc]
+
+
+class BiSubscriptionOut(SchemaBase):
+    id: str | None = Field(None, title="订阅ID（sqid）")
+    name: str | None = Field(None, title="订阅名称")
+    dashboard_id: str | None = Field(None, title="仪表盘ID（sqid）")
+    cron_expr: str | None = Field(None, title="cron 表达式")
+    next_run_at: datetime | None = Field(None, title="下次触发时间")
+    last_run_at: datetime | None = Field(None, title="上次触发时间")
+    last_status: str | None = Field(None, title="上次执行状态 success/failed")
+    status_type: StatusType | None = Field(None, title="状态")
+
+
+class BiNotifyRecordSearch(PageQueryBase):
+    status: str | None = Field(None, title="按状态筛选：success/failed")
+    is_read: bool | None = Field(None, title="按已读筛选")
+
+
+class BiNotifyRecordOut(SchemaBase):
+    id: str | None = Field(None, title="消息ID（sqid）")
+    subscription_id: str | None = Field(None, title="订阅ID（sqid）")
+    title: str | None = Field(None, title="消息标题")
+    content: str | None = Field(None, title="消息内容（JSON 字符串）")
+    status: str | None = Field(None, title="状态 success/failed")
+    is_read: bool | None = Field(None, title="是否已读")
+    created_at: datetime | None = Field(None, title="创建时间")

@@ -219,6 +219,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
+        name: 'bi_notify-records',
+        path: '/bi/notify-records',
+        component: 'view.bi_notify-records',
+        meta: {
+          title: 'bi_notify-records',
+          i18nKey: 'route.bi_notify-records'
+        }
+      },
+      {
         name: 'bi_quota',
         path: '/bi/quota',
         component: 'view.bi_quota',
@@ -244,6 +253,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'bi_sql-workbench',
           i18nKey: 'route.bi_sql-workbench'
+        }
+      },
+      {
+        name: 'bi_subscriptions',
+        path: '/bi/subscriptions',
+        component: 'view.bi_subscriptions',
+        meta: {
+          title: 'bi_subscriptions',
+          i18nKey: 'route.bi_subscriptions'
         }
       }
     ]

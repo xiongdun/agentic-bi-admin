@@ -7,10 +7,12 @@ autodiscover 通过本文件识别模块：注册路由前缀 /api/v1/business/b
 from __future__ import annotations
 
 from app.business.bi.api import public_router, router
+from app.business.bi.config import BIZ_SETTINGS
 from app.business.bi.events import BI_EVENTS
 from app.business.bi.init_data import INIT_DATA, init
 from app.business.bi.policies import BI_DATA_POLICIES
 from app.business.bi.services_async_query import cleanup_expired_tasks
+from app.business.bi.services_subscription import dispatch_subscriptions
 from app.utils import BusinessModule, BusinessRouter, PeriodicTask, PermissionSpec
 
 # BI 模块宽松限流配额：SSE 对话与 SQL 执行路径需要更高上限。
@@ -34,6 +36,16 @@ _cleanup_task = PeriodicTask(
     leader_only=True,
 )
 
+# 定时扫描到期订阅并执行（默认 60s 一次，leader_only）：
+# 查 status_type=enable AND next_run_at <= now 的订阅，串行刷新仪表盘 + 写消息
+_subscription_dispatch_task = PeriodicTask(
+    name="bi.subscription.dispatch",
+    handler=dispatch_subscriptions,
+    interval_seconds=BIZ_SETTINGS.BI_SUBSCRIPTION_DISPATCH_INTERVAL,
+    leader_only=True,
+    run_immediately=False,
+)
+
 module = BusinessModule(
     name="bi",
     title="智能 BI",
@@ -47,5 +59,5 @@ module = BusinessModule(
     permissions=PermissionSpec(init_data=INIT_DATA),
     events=BI_EVENTS,
     data_policies=BI_DATA_POLICIES,
-    tasks=[_cleanup_task],
+    tasks=[_cleanup_task, _subscription_dispatch_task],
 )

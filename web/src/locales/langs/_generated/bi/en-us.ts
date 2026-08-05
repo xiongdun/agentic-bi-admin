@@ -17,6 +17,8 @@ const biLocale = {
     'bi_dashboard-detail': 'Dashboard Detail',
     bi_masking: 'Masking Rules',
     bi_quota: 'Quota Config',
+    bi_subscriptions: 'Dashboard Subscriptions',
+    'bi_notify-records': 'Notifications',
     bi_share: 'Shared Chart'
   },
   page: {
@@ -430,6 +432,49 @@ const biLocale = {
           user: 'By User',
           datasource: 'By Datasource'
         }
+      },
+      subscription: {
+        title: 'Dashboard Subscriptions',
+        create: 'New Subscription',
+        edit: 'Edit Subscription',
+        name: 'Subscription Name',
+        dashboard: 'Dashboard',
+        cronExpr: 'Cron Expression',
+        nextRunAt: 'Next Run',
+        lastRunAt: 'Last Run',
+        lastStatus: 'Last Status',
+        status: 'Status',
+        searchPlaceholder: 'Search subscription name',
+        cronPresets: {
+          hourly: 'Hourly',
+          daily: 'Daily',
+          weekly: 'Weekly'
+        },
+        cronHint: '5 fields: min hour day month week (e.g. 0 9 * * * daily at 9am)',
+        confirmDelete: 'Delete this subscription?',
+        empty: 'No subscriptions',
+        statusSuccess: 'Success',
+        statusFailed: 'Failed'
+      },
+      notify: {
+        title: 'Notifications',
+        unread: 'Unread',
+        read: 'Read',
+        markRead: 'Mark Read',
+        viewAll: 'View All',
+        createdAt: 'Created At',
+        empty: 'No notifications',
+        statusSuccess: 'Success',
+        statusFailed: 'Failed'
+      },
+      export: {
+        export: 'Export',
+        csv: 'CSV',
+        excel: 'Excel',
+        pdf: 'PDF',
+        noChart: 'No chart to export',
+        exportSuccess: 'Export succeeded',
+        exportFailed: 'Export failed'
       }
     }
   }

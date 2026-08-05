@@ -78,6 +78,7 @@
     "gridstack": "^13.0.2",
     "jsbarcode": "3.12.3",
     "json5": "2.2.3",
+    "jspdf": "^4.2.1",
     "marked": "^18.0.7",
     "monaco-editor": "^0.56.0",
     "naive-ui": "2.44.1",

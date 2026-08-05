@@ -28,7 +28,7 @@ export default defineComponent({
     isEditMode: { type: Boolean, default: false }
   },
   emits: ['remove'],
-  setup(p, { emit }) {
+  setup(p, { emit, expose }) {
     const chartMeta = computed(() => p.item?.chartMeta ?? null);
     const snapshot = computed(() => p.item?.resultSnapshot ?? null);
 
@@ -58,11 +58,21 @@ export default defineComponent({
       );
     });
 
-    const { domRef } = useEcharts<ECOption>(() => option.value, {
+    const { domRef, chart } = useEcharts<ECOption>(() => option.value, {
       onRender: instance => {
         if (Object.keys(option.value).length) {
           instance.setOption({ ...option.value, backgroundColor: 'transparent' });
         }
+      }
+    });
+
+    // 供父组件（仪表盘详情页）获取图表 PNG，用于 PDF 导出
+    expose({
+      /** 返回图表 PNG dataURL；未渲染或无快照返回 null */
+      getChartDataURL(): string | null {
+        const inst = chart.value;
+        if (!inst || !snapshot.value?.rows?.length) return null;
+        return inst.getDataURL({ pixelRatio: 2, backgroundColor: '#ffffff' });
       }
     });
 

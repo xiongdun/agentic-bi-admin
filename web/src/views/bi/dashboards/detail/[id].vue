@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { NButton, NDrawer, NDrawerContent, NEmpty, NInput, NSpace, NSpin, NTag, NTooltip } from 'naive-ui';
+import { NButton, NDrawer, NDrawerContent, NEmpty, NDropdown, NInput, NSpace, NSpin, NTag, NTooltip } from 'naive-ui';
 import { GridStack } from 'gridstack';
 import type { GridStackNode, GridStackWidget } from 'gridstack';
 import { createApp, type App as VueApp } from 'vue';
@@ -13,9 +13,11 @@ import {
   fetchRefreshBiDashboard,
   fetchUpdateBiDashboard
 } from '@/service/api/bi-dashboard';
+import { fetchBiDashboardExcelExport } from '@/service/api/bi-export';
 import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
 import DashboardChartCard from '../../shared/dashboard-chart-card.vue';
+import { exportDashboardPdf, type ChartPdfItem } from '../../shared/export-pdf';
 
 defineOptions({ name: 'BiDashboardDetail' });
 
@@ -52,6 +54,9 @@ const previewItems = ref<Record<string, Api.Bi.BiDashboardPreviewItem>>({});
 const gridRef = ref<HTMLElement>();
 let grid: GridStack | null = null;
 const mountedApps = new Map<string, VueApp>();
+/** 图表卡片根实例（通过 expose 提供 getChartDataURL，用于 PDF 导出） */
+type ChartCardRef = { getChartDataURL?: () => string | null };
+const chartInstances = new Map<string, ChartCardRef>();
 
 // 图表选择器抽屉
 const showChartPicker = ref<boolean>(false);
@@ -122,6 +127,7 @@ function destroyGrid() {
   // 先卸载挂载的 Vue 应用
   mountedApps.forEach(app => app.unmount());
   mountedApps.clear();
+  chartInstances.clear();
   // 销毁 gridstack
   if (grid) {
     grid.destroy(false);
@@ -189,6 +195,7 @@ function renderGrid() {
           app.unmount();
           mountedApps.delete(id);
         }
+        chartInstances.delete(id);
       });
     });
   }
@@ -216,8 +223,11 @@ function mountChartCards() {
       isEditMode: isEditMode.value,
       onRemove: (id: string) => removeChart(id)
     });
-    app.mount(container);
+    const instance = app.mount(container);
     mountedApps.set(chartId, app);
+    if (instance) {
+      chartInstances.set(chartId, instance as ChartCardRef);
+    }
   });
 }
 
@@ -340,8 +350,58 @@ function remountAllCards() {
   // 卸载所有
   mountedApps.forEach(app => app.unmount());
   mountedApps.clear();
+  chartInstances.clear();
   // 重新挂载
   mountChartCards();
+}
+
+// ---------------- 导出 ----------------
+
+const exportOptions = [
+  { label: $t('page.bi.export.excel'), key: 'excel' },
+  { label: $t('page.bi.export.pdf'), key: 'pdf' }
+];
+
+/** 触发 Blob 下载（a.click + revokeObjectURL） */
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function handleExportSelect(key: string) {
+  try {
+    if (key === 'excel') {
+      const { data: blob, error } = await fetchBiDashboardExcelExport(dashboardId.value);
+      if (error || !blob) return;
+      triggerBlobDownload(blob, `${dashboardName.value || 'dashboard'}.xlsx`);
+    } else if (key === 'pdf') {
+      const items: ChartPdfItem[] = [];
+      viewLayout.value.forEach(item => {
+        const inst = chartInstances.get(item.chartId);
+        const url = inst?.getChartDataURL?.();
+        if (url) {
+          items.push({
+            title: refreshItems.value[item.chartId]?.chartMeta?.name ?? 'chart',
+            dataUrl: url
+          });
+        }
+      });
+      if (!items.length) {
+        window.$message?.warning($t('page.bi.export.noChart'));
+        return;
+      }
+      await exportDashboardPdf(dashboardName.value || 'dashboard', items);
+    }
+    window.$message?.success($t('page.bi.export.exportSuccess'));
+  } catch {
+    window.$message?.error($t('page.bi.export.exportFailed'));
+  }
 }
 
 // ---------------- 生命周期 ----------------
@@ -439,6 +499,17 @@ function chartTypeLabel(type: string): string {
               <template #icon><icon-ic-round-refresh class="text-icon" /></template>
               {{ $t('page.bi.dashboard.refreshAll') }}
             </NButton>
+            <NDropdown
+              v-if="hasAuth('B_BI_DASHBOARD_EXPORT')"
+              :options="exportOptions"
+              :disabled="!viewLayout.length"
+              @select="handleExportSelect"
+            >
+              <NButton size="small" ghost type="primary">
+                <template #icon><icon-ic-round-download class="text-icon" /></template>
+                {{ $t('page.bi.export.export') }}
+              </NButton>
+            </NDropdown>
             <NButton v-if="hasAuth('B_BI_DASHBOARD_EDIT')" size="small" type="primary" @click="enterEdit">
               <template #icon><icon-ic-round-edit class="text-icon" /></template>
               {{ $t('page.bi.dashboard.edit') }}

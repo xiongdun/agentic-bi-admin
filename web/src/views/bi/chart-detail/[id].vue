@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { NButton, NCode, NCollapse, NCollapseItem, NPopconfirm, NSpace, NSpin, NTag } from 'naive-ui';
+import { NButton, NCode, NCollapse, NCollapseItem, NDropdown, NPopconfirm, NSpace, NSpin, NTag } from 'naive-ui';
 import {
   fetchBiChart,
   fetchDeleteBiChart,
@@ -9,11 +9,13 @@ import {
   fetchEnableBiChartShare,
   fetchRefreshBiChart
 } from '@/service/api/bi-chart';
+import { fetchBiChartCsvExport, fetchBiChartsExcelExport } from '@/service/api/bi-export';
 import { fetchBiDatasourceList } from '@/service/api/bi';
 import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
 import { useEcharts, type ECOption } from '@/hooks/common/echarts';
 import { buildChartOption, type ChartType } from '../shared/chart-config';
+import { exportChartPdf } from '../shared/export-pdf';
 
 defineOptions({ name: 'BiChartDetail' });
 
@@ -43,7 +45,11 @@ const chartOption = computed<ECOption>(() => {
   );
 });
 
-const { domRef: chartRef, setOptions: setChartOptions } = useEcharts(() => ({}) as ECOption, {
+const {
+  domRef: chartRef,
+  chart: chartInstance,
+  setOptions: setChartOptions
+} = useEcharts(() => ({}) as ECOption, {
   onRender: instance => {
     if (Object.keys(chartOption.value).length) {
       instance.setOption({ ...chartOption.value, backgroundColor: 'transparent' });
@@ -174,6 +180,50 @@ function exportPng() {
   a.click();
 }
 
+const exportOptions = [
+  { label: $t('page.bi.export.csv'), key: 'csv' },
+  { label: $t('page.bi.export.excel'), key: 'excel' },
+  { label: $t('page.bi.export.pdf'), key: 'pdf' }
+];
+
+/** 触发 Blob 下载（a.click + revokeObjectURL） */
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function handleExportSelect(key: string) {
+  if (!chart.value) return;
+  try {
+    if (key === 'csv') {
+      const { data: blob, error } = await fetchBiChartCsvExport(chart.value.id);
+      if (error || !blob) return;
+      triggerBlobDownload(blob, `${chart.value.name}.csv`);
+    } else if (key === 'excel') {
+      const { data: blob, error } = await fetchBiChartsExcelExport({ chartIds: [chart.value.id] });
+      if (error || !blob) return;
+      triggerBlobDownload(blob, `${chart.value.name}.xlsx`);
+    } else if (key === 'pdf') {
+      const inst = chartInstance.value;
+      if (!inst) {
+        window.$message?.warning($t('page.bi.export.noChart'));
+        return;
+      }
+      const url = inst.getDataURL({ pixelRatio: 2, backgroundColor: '#fff' });
+      await exportChartPdf(chart.value.name || 'chart', url);
+    }
+    window.$message?.success($t('page.bi.export.exportSuccess'));
+  } catch {
+    window.$message?.error($t('page.bi.export.exportFailed'));
+  }
+}
+
 async function handleDelete() {
   if (!chart.value) return;
   const { error } = await fetchDeleteBiChart({ id: chart.value.id });
@@ -244,6 +294,17 @@ onMounted(() => {
                 <template #icon><icon-ic-round-download class="text-icon" /></template>
                 {{ $t('page.bi.chart.exportPng') }}
               </NButton>
+              <NDropdown
+                v-if="hasAuth('B_BI_CHART_EXPORT')"
+                :options="exportOptions"
+                :disabled="!chart?.resultSnapshot?.rows?.length"
+                @select="handleExportSelect"
+              >
+                <NButton size="small" type="primary" ghost>
+                  <template #icon><icon-ic-round-download class="text-icon" /></template>
+                  {{ $t('page.bi.export.export') }}
+                </NButton>
+              </NDropdown>
               <NButton
                 v-if="hasAuth('B_BI_CHART_SHARE')"
                 size="small"

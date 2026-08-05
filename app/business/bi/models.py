@@ -1,7 +1,7 @@
 # pyright: reportIncompatibleVariableOverride=false
 """BI 智能数据分析模块 Tortoise ORM 模型。
 
-13 个模型，表名统一 ``biz_bi_*`` 前缀：
+15 个模型，表名统一 ``biz_bi_*`` 前缀：
 
 - metadata：BiDatasource / BiTable / BiColumn / BiIndex / BiForeignKey
 - semantic：BiMetric
@@ -9,6 +9,10 @@
 - llm：BiLLMProvider / BiLLMModel
 - audit：BiAuditLog
 - security：BiMaskingRule / BiQuotaConfig
+- chart：BiChart
+- async query：BiQueryTask
+- dashboard：BiDashboard
+- subscription：BiSubscription / BiNotifyRecord
 
 FK 关联引用本模块内模型时使用 ``app_system.<Model>`` 字符串
 （业务模块默认注册到 ``app_system`` app label，与 ``app/system`` 共享连接）。
@@ -380,4 +384,61 @@ class BiDashboard(BaseModel, AuditMixin, SoftDeleteMixin):
         manager = SoftDeleteManager()
         indexes = [
             ("tenant_id", "created_at"),
+        ]
+
+
+# ==================== subscription 子模块 ====================
+
+
+class BiSubscription(BaseModel, AuditMixin, SoftDeleteMixin):
+    """仪表盘定时订阅。
+
+    用户订阅 BiDashboard 后按 cron 表达式定时刷新，结果写 BiNotifyRecord。
+    ``next_run_at`` 为下次触发时间（UTC），由 PeriodicTask ``bi.subscription.dispatch``
+    每 60s 扫描并执行到期订阅。``tenant_id`` 存 ``user.id`` 实现行级隔离。
+    """
+
+    id = fields.IntField(primary_key=True, description="主键ID")
+    name = fields.CharField(max_length=100, description="订阅名称")
+    dashboard_id = fields.BigIntField(description="仪表盘ID")
+    user_id = fields.BigIntField(description="订阅者用户ID")
+    cron_expr = fields.CharField(max_length=100, description="cron表达式（5字段：分 时 日 月 周）")
+    next_run_at = fields.DatetimeField(description="下次触发时间（UTC）")
+    last_run_at = fields.DatetimeField(null=True, description="上次触发时间")
+    last_status = fields.CharField(max_length=20, null=True, description="上次执行状态 success/failed")
+    status_type = fields.CharEnumField(enum_type=StatusType, default=StatusType.enable, description="状态")
+    tenant_id = fields.BigIntField(description="租户ID（行级 data_scope 作用域，存 user.id）")
+
+    class Meta:
+        table = "biz_bi_subscription"
+        manager = SoftDeleteManager()
+        indexes = [
+            ("tenant_id", "status_type"),
+            ("next_run_at",),
+        ]
+
+
+class BiNotifyRecord(BaseModel, AuditMixin, SoftDeleteMixin):
+    """订阅推送消息记录。
+
+    每次订阅执行（成功或失败）写一条记录，前端铃铛组件轮询未读数。
+    ``content`` 为 JSON 字符串，成功时含 dashboardName/successCount/failedCount/totalElapsedMs；
+    失败时含 error 信息。
+    """
+
+    id = fields.IntField(primary_key=True, description="主键ID")
+    subscription_id = fields.BigIntField(description="订阅ID")
+    user_id = fields.BigIntField(description="接收者用户ID")
+    title = fields.CharField(max_length=200, description="消息标题")
+    content = fields.CharField(max_length=2000, null=True, description="消息内容（JSON）")
+    status = fields.CharField(max_length=20, description="状态 success/failed")
+    is_read = fields.BooleanField(default=False, description="是否已读")
+    tenant_id = fields.BigIntField(description="租户ID（行级 data_scope 作用域，存 user.id）")
+
+    class Meta:
+        table = "biz_bi_notify_record"
+        manager = SoftDeleteManager()
+        indexes = [
+            ("user_id", "is_read"),
+            ("subscription_id", "created_at"),
         ]
